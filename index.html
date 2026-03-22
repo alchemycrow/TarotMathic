@@ -731,6 +731,30 @@ function loop(){
   if(running)requestAnimationFrame(loop);
 }
 
+// ── GATE ──────────────────────────────────────────────────
+const GATE_PASS = 'c1k0l0v3s2hug'; // şifreyi burdan değiştir
+
+function checkGate(){
+  const val = document.getElementById('gateInput').value.trim().toLowerCase();
+  if(val === GATE_PASS){
+    document.getElementById('gate').style.opacity='0';
+    document.getElementById('gate').style.transition='opacity 0.6s';
+    setTimeout(()=>document.getElementById('gate').style.display='none', 600);
+    sessionStorage.setItem('tarot_auth','1');
+  } else {
+    const err=document.getElementById('gateErr');
+    err.textContent='Yanlış kod — tekrar dene';
+    err.style.opacity='1';
+    setTimeout(()=>err.style.opacity='0',2500);
+    document.getElementById('gateInput').value='';
+  }
+}
+
+// Auto-pass if already authenticated this session
+if(sessionStorage.getItem('tarot_auth')==='1'){
+  document.getElementById('gate').style.display='none';
+}
+
 rgInit();for(let i=0;i<20;i++)rgStep();
 kInit();spInit();
 setTimeout(loop,150);
