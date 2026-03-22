@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matematik Tarotu</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#09080f;--ink2:#100f1c;--ink3:#181628;
+  --veil:#201e30;--rim:#2e2b44;--rim2:#3e3b58;
+  --mist:#8c89a8;--fog:#5a5778;
+  --paper:#e4dfd4;--paper2:#b8b2a4;
+  --gold:#c8a448;--gold2:#e4c870;
+  --moon:#98b4d0;--rose:#c07890;--sage:#70a882;--amethyst:#9478c0;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:17px;line-height:1.7;
+  overflow-x:hidden;
+}
+
+/* Stars */
+#starCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+
+/* Layout */
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 1.2rem 5rem;}
+
+/* Header */
+header{text-align:center;padding:2.5rem 0 1.5rem;}
+.sigil{font-size:1.6rem;letter-spacing:0.6em;color:var(--gold);opacity:0.5;margin-bottom:0.8rem;}
+h1{font-family:'Cinzel',serif;font-size:clamp(1.5rem,5vw,2.6rem);font-weight:400;letter-spacing:0.22em;color:var(--paper);margin-bottom:0.4rem;}
+.tagline{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.28em;color:var(--fog);text-transform:uppercase;}
+
+/* Spread selector */
+.spread-nav{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+  padding:1.2rem 0;
+  border-top:0.5px solid var(--rim);
+  border-bottom:0.5px solid var(--rim);
+  margin-bottom:1.4rem;
+}
+.snav-btn{
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.12em;
+  padding:8px 14px;background:transparent;
+  border:0.5px solid var(--rim2);border-radius:20px;
+  color:var(--mist);cursor:pointer;transition:all 0.2s;
+  white-space:nowrap;
+}
+.snav-btn:hover{border-color:var(--fog);color:var(--paper);}
+.snav-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(200,164,72,0.06);}
+
+/* Engine */
+.engine{
+  display:grid;grid-template-columns:repeat(8,1fr);gap:4px;
+  padding:0.8rem 0;margin-bottom:1.2rem;
+  border-bottom:0.5px solid var(--rim);
+}
+.eng{background:var(--ink2);border:0.5px solid var(--rim);border-radius:5px;padding:6px 4px;}
+.eng-t{font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.07em;color:var(--fog);text-transform:uppercase;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
+canvas.mini{width:100%;height:34px;border-radius:3px;background:var(--ink3);display:block;}
+.eng-v{font-size:8.5px;color:var(--mist);margin-top:2px;text-align:center;font-family:'Cinzel',serif;}
+
+/* Active spread info */
+.spread-info{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 16px;background:var(--ink2);
+  border:0.5px solid var(--rim2);border-radius:10px;
+  margin-bottom:1rem;
+}
+.spread-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background 0.3s;}
+.spread-meta{flex:1;}
+.spread-name-big{font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.1em;}
+.spread-desc-small{font-size:12px;color:var(--fog);font-style:italic;}
+.next-info{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.next-pos-label{font-family:'Cinzel',serif;font-size:10px;color:var(--fog);letter-spacing:0.08em;}
+.next-pos-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.08em;}
+.deck-rem{font-size:10px;color:var(--fog);letter-spacing:0.05em;}
+
+/* Controls */
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1.4rem;}
+.btn-draw{
+  font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.15em;
+  padding:12px 30px;background:transparent;
+  border:0.5px solid var(--gold);border-radius:6px;
+  color:var(--gold);cursor:pointer;transition:all 0.2s;
+}
+.btn-draw:hover{background:rgba(200,164,72,0.07);}
+.btn-draw:active{transform:scale(0.98);}
+.btn-sm{
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;
+  padding:8px 14px;background:transparent;
+  border:0.5px solid var(--rim2);border-radius:6px;
+  color:var(--mist);cursor:pointer;transition:all 0.2s;
+}
+.btn-sm:hover{border-color:var(--fog);color:var(--paper);}
+.prog{font-family:'Cinzel',serif;font-size:11px;color:var(--fog);letter-spacing:0.1em;margin-left:auto;}
+
+/* Cards */
+.spread-area{
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+  min-height:50px;padding:0.5rem 0 1.5rem;
+  border-bottom:0.5px solid var(--rim);margin-bottom:1.4rem;
+}
+.empty-hint{font-size:14px;color:var(--fog);font-style:italic;padding:2rem 0;text-align:center;letter-spacing:0.05em;width:100%;}
+
+.card-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.card-pos-lbl{
+  font-family:'Cinzel',serif;font-size:8px;
+  letter-spacing:0.09em;text-align:center;
+  max-width:88px;line-height:1.4;
+}
+.tcard{
+  width:84px;height:138px;border-radius:8px;
+  border:0.5px solid var(--rim);background:var(--ink2);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:8px 5px;text-align:center;
+  transition:border-color 0.3s;
+  animation:reveal 0.35s ease;
+}
+@keyframes reveal{from{opacity:0;transform:translateY(6px) scale(0.97);}to{opacity:1;transform:none;}}
+.tcard.rev{transform:rotate(180deg);}
+.tc-arc{font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.07em;color:var(--fog);text-transform:uppercase;margin-bottom:4px;}
+.tc-glyph{font-size:21px;line-height:1;margin-bottom:5px;}
+.tc-name{font-size:9.5px;color:var(--paper);line-height:1.35;}
+.tc-rev{font-size:8px;color:var(--rose);margin-top:3px;font-style:italic;}
+.card-orb{width:4px;height:4px;border-radius:50%;margin-top:5px;opacity:0.5;}
+
+/* Result */
+.result-panel{
+  background:var(--ink2);border:0.5px solid var(--rim2);
+  border-radius:10px;padding:1.4rem 1.6rem;display:none;
+}
+.result-hdr{
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.22em;
+  color:var(--gold);text-transform:uppercase;margin-bottom:1rem;text-align:center;
+}
+.result-list{list-style:none;display:flex;flex-direction:column;gap:0;}
+.result-list li{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:14px;padding:7px 0;
+  border-bottom:0.5px solid var(--rim);
+}
+.result-list li:last-child{border:none;}
+.rl-pos{font-family:'Cinzel',serif;font-size:10px;color:var(--fog);letter-spacing:0.07em;min-width:110px;flex-shrink:0;}
+.rl-card{color:var(--paper);}
+.rl-rev{color:var(--rose);font-style:italic;font-size:12px;margin-left:4px;}
+.copy-btn{
+  display:block;width:100%;margin-top:1.2rem;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.15em;
+  padding:11px;background:transparent;
+  border:0.5px solid var(--amethyst);border-radius:6px;
+  color:var(--amethyst);cursor:pointer;transition:all 0.2s;
+}
+.copy-btn:hover{background:rgba(148,120,192,0.07);}
+.copy-ok{
+  text-align:center;font-size:12px;color:var(--sage);
+  margin-top:8px;font-style:italic;opacity:0;transition:opacity 0.3s;
+}
+.copy-ok.show{opacity:1;}
+
+/* About section */
+.about{padding:2rem 0;border-top:0.5px solid var(--rim);}
+.about h2{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.18em;font-weight:400;margin-bottom:1.2rem;color:var(--paper);}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.about-card{
+  background:var(--ink2);border:0.5px solid var(--rim);
+  border-radius:8px;padding:1rem 1.2rem;
+}
+.about-card h3{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.6rem;font-weight:400;}
+.about-card p{font-size:14px;color:var(--paper2);line-height:1.7;}
+.about-card ul{font-size:13px;color:var(--paper2);line-height:1.8;padding-left:1rem;}
+
+/* Books */
+.books{padding:1.5rem 0;border-top:0.5px solid var(--rim);}
+.books h2{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.18em;font-weight:400;margin-bottom:1.2rem;color:var(--paper);}
+.book-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.book{
+  background:var(--ink2);border:0.5px solid var(--rim);
+  border-radius:8px;padding:1rem;
+  border-left:2px solid var(--amethyst);
+}
+.book-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.08em;color:var(--paper);margin-bottom:4px;}
+.book-author{font-size:12px;color:var(--fog);font-style:italic;margin-bottom:6px;}
+.book-note{font-size:12px;color:var(--paper2);line-height:1.5;}
+
+/* Footer */
+footer{
+  text-align:center;padding:2rem 0 1rem;
+  border-top:0.5px solid var(--rim);
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:0.2em;color:var(--fog);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--ink);}
+::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:2px;}
+
+/* Mobile */
+@media(max-width:600px){
+  .engine{grid-template-columns:repeat(4,1fr);}
+  .about-grid{grid-template-columns:1fr;}
+  .snav-btn{font-size:9px;padding:7px 11px;}
+  .spread-info{flex-wrap:wrap;gap:8px;}
+  h1{font-size:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+
+<div class="wrap">
+
+<!-- Header -->
+<header>
+  <div class="sigil">✦ ◎ ✦</div>
+  <h1>MATEMATİK TAROTU</h1>
+  <div class="tagline">Sekiz Fonksiyon · Yetmiş Sekiz Kart · Sonsuz Yol</div>
+</header>
+
+<!-- Spread nav -->
+<nav class="spread-nav" id="spreadNav"></nav>
+
+<!-- Engine -->
+<div class="engine">
+  <div class="eng"><div class="eng-t">λ Lyapunov</div><canvas class="mini" id="c0"></canvas><div class="eng-v" id="v0">—</div></div>
+  <div class="eng"><div class="eng-t">M Renorm.</div><canvas class="mini" id="c1"></canvas><div class="eng-v" id="v1">—</div></div>
+  <div class="eng"><div class="eng-t">F Free En.</div><canvas class="mini" id="c2"></canvas><div class="eng-v" id="v2">—</div></div>
+  <div class="eng"><div class="eng-t">Φ Int.Info</div><canvas class="mini" id="c3"></canvas><div class="eng-v" id="v3">—</div></div>
+  <div class="eng"><div class="eng-t">Lorenz z</div><canvas class="mini" id="c4"></canvas><div class="eng-v" id="v4">—</div></div>
+  <div class="eng"><div class="eng-t">Kuramoto</div><canvas class="mini" id="c5"></canvas><div class="eng-v" id="v5">—</div></div>
+  <div class="eng"><div class="eng-t">Felaket</div><canvas class="mini" id="c6"></canvas><div class="eng-v" id="v6">—</div></div>
+  <div class="eng"><div class="eng-t">Kum Çığı</div><canvas class="mini" id="c7"></canvas><div class="eng-v" id="v7">—</div></div>
+</div>
+
+<!-- Spread info bar -->
+<div class="spread-info">
+  <div class="spread-dot" id="spreadDot"></div>
+  <div class="spread-meta">
+    <div class="spread-name-big" id="spreadNameBig">—</div>
+    <div class="spread-desc-small" id="spreadDescSmall">—</div>
+  </div>
+  <div class="next-info">
+    <div class="next-pos-label" id="nextPosLabel">Sıradaki</div>
+    <div class="next-pos-name" id="nextPosName">—</div>
+    <div class="deck-rem" id="deckRem">78 kart</div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-draw" onclick="drawCard()">Kart Çek ↯</button>
+  <button class="btn-sm" id="pauseBtn" onclick="togglePause()">⏸ Durdur</button>
+  <button class="btn-sm" onclick="clearSpread()">Yeni Açılım</button>
+  <div class="prog" id="prog">0 / 0</div>
+</div>
+
+<!-- Cards -->
+<div class="spread-area" id="spreadArea">
+  <div class="empty-hint">Bir açılım seç — motor hazır</div>
+</div>
+
+<!-- Result -->
+<div class="result-panel" id="resultPanel">
+  <div class="result-hdr">Açılım Tamamlandı</div>
+  <ul class="result-list" id="resultList"></ul>
+  <button class="copy-btn" onclick="copyPrompt()">Claude'a Gönder — Kopyala</button>
+  <div class="copy-ok" id="copyOk">Kopyalandı ✦ Claude'a yapıştır</div>
+</div>
+
+<!-- About -->
+<div class="about">
+  <h2>Motor Hakkında</h2>
+  <div class="about-grid">
+    <div class="about-card">
+      <h3>Sekiz Fonksiyon</h3>
+      <p>Her kart çekiminde sekiz matematiksel sistem eş zamanlı çalışır. Hangi arcananın, hangi suitin, düz mü ters mi geleceği, hangi numaranın seçileceği — hepsi bu fonksiyonların o anki kesişim noktasından doğar.</p>
+    </div>
+    <div class="about-card">
+      <h3>Pozisyon Profilleri</h3>
+      <p>Her açılım pozisyonunun kendi ağırlık matrisi vardır. "Engelleyen" pozisyonu Kılıçlar yönünde eğilir, felaket eşiği daha hassastır. "Sana Mesaj" kartı net gelir, ters dönmek için daha fazla baskı gerekir.</p>
+    </div>
+    <div class="about-card">
+      <h3>78 Kartlık Deste</h3>
+      <p>Çekilen kart desteden çıkar, bir daha seçilemez. Açılım boyunca kaç kart kaldığı görünür. Yeni açılımda deste yeniden karılır.</p>
+    </div>
+    <div class="about-card">
+      <h3>Yorum</h3>
+      <p>"Claude'a Gönder" ile açılımın tam prompt'u panoya kopyalanır. Claude'a yapıştırınca karmik, ruhsal, witch tonunda minimum 500 kelime yorum gelir.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Books -->
+<div class="books">
+  <h2>Referans Kitaplar</h2>
+  <div class="book-list">
+    <div class="book">
+      <div class="book-title">Seventy-Eight Degrees of Wisdom</div>
+      <div class="book-author">Rachel Pollack</div>
+      <div class="book-note">Tarot literatürünün temel taşı. Her kartın psikolojik ve karmik derinliği için birincil referans.</div>
+    </div>
+    <div class="book">
+      <div class="book-title">The Modern Witchcraft Book of Tarot</div>
+      <div class="book-author">Skye Alexander</div>
+      <div class="book-note">Pratik okuma teknikleri, aşk ve ilişki yorumları. Cadılık geleneği ile tarotun buluşma noktası.</div>
+    </div>
+    <div class="book">
+      <div class="book-title">The Way of Tarot</div>
+      <div class="book-author">Alejandro Jodorowsky</div>
+      <div class="book-note">Kartların birbiriyle konuşmasını okumak için. Açılım içi dinamikler ve sembolik derinlik.</div>
+    </div>
+    <div class="book">
+      <div class="book-title">The Symbolism of the Tarot</div>
+      <div class="book-author">P.D. Ouspensky</div>
+      <div class="book-note">Felsefi ve sembolik katman. Her kartın evrensel arketip içindeki yeri.</div>
+    </div>
+    <div class="book">
+      <div class="book-title">Tarot for Your Self</div>
+      <div class="book-author">Mary K. Greer</div>
+      <div class="book-note">Karmik okuma, shadow work ve kişisel dönüşüm için. Kartları "sen kim olabilirsin" sorusundan yorumlar.</div>
+    </div>
+    <div class="book">
+      <div class="book-title">Past-Life & Karmic Tarot</div>
+      <div class="book-author">Edain McCoy</div>
+      <div class="book-note">Geçmiş yaşam izleri ve karmik örüntüler. Ruhun yolculuğunu kartlarla okumak için.</div>
+    </div>
+  </div>
+</div>
+
+<footer>✦ Matematik Tarotu · Her açılım eşsizdir ✦</footer>
+
+</div><!-- /wrap -->
+
+<script>
+// ── STARS ─────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('starCanvas');
+  function r(){c.width=innerWidth;c.height=innerHeight;}
+  r();addEventListener('resize',r);
+  const ctx=c.getContext('2d');
+  const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.1+0.2,a:Math.random(),sp:Math.random()*0.0004+0.0001}));
+  (function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s=>{s.a+=s.sp;ctx.beginPath();ctx.arc(s.x*c.width,s.y*c.height,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,195,228,${0.15+Math.sin(s.a)*0.25})`;ctx.fill();});
+    requestAnimationFrame(draw);
+  })();
+})();
+
+// ── SPREADS DEFINITION ────────────────────────────────────
+const SPREADS = {
+  iliski: {
+    id:'iliski',name:'İlişki Yansıması',desc:'İlişki · Gelecek Yönü · Karmik Okuma',color:'#c87898',
+    tone:'ilişki · gelecek yönü · karmik okuma',
+    positions:[
+      {num:'I',  name:'Sen',           desc:'şu anki enerji',      color:'#5b8fc9',λ:0,    M:0,    F:0.12,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Partner',       desc:'onların enerjisi',     color:'#c47f6f',λ:0,    M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.30,Cat:0.10},
+      {num:'III',name:'İlişkinin Özü', desc:'temel bağ',            color:'#5aaa90',λ:-0.10,M:0.30, F:0.15,Φ:0.55,Lz:0.45,Kr:0.40,Cat:0.00},
+      {num:'IV', name:'Engelleyen',    desc:'zorluk ve kök',        color:'#c49a50',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'V',  name:'Sana Mesaj',    desc:'kartların tavsiyesi',  color:'#9878c8',λ:-0.05,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+      {num:'VI', name:'Karma Dersi',   desc:'ruhsal öğreti',        color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'VII',name:'Senaryo A',     desc:'seçim yapılırsa',      color:'#7aaa50',λ:0.10, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
+      {num:'VIII',name:'Senaryo B',    desc:'bekleyiş sürerse',     color:'#c86888',λ:0.10, M:-0.20,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
+    ]
+  },
+  tekkisi: {
+    id:'tekkisi',name:'Tek Kişi',desc:'Bireysel · İçsel Yolculuk',color:'#98b4d0',
+    tone:'bireysel içsel yolculuk · karmik okuma',
+    positions:[
+      {num:'I',  name:'Şu Anki Ben',  desc:'mevcut enerji',       color:'#98b4d0',λ:-0.05,M:0,    F:0.14,Φ:0.75,Lz:0.25,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Güç',          desc:'taşıdığın ateş',      color:'#c49a50',λ:-0.10,M:0.15, F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'III',name:'Gölge',        desc:'görülmeyi bekleyen',  color:'#6858a8',λ:0.05, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.40},
+      {num:'IV', name:'Mesaj',        desc:'evrenin sesi',        color:'#9878c8',λ:-0.15,M:0,    F:0.18,Φ:0.85,Lz:0.15,Kr:0.10,Cat:0.00},
+      {num:'V',  name:'Yön',          desc:'önündeki yol',        color:'#7aaa50',λ:-0.05,M:0,    F:0.12,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
+    ]
+  },
+  karar: {
+    id:'karar',name:'Karar Anı',desc:'Seçim · İki Yol · Sonuç',color:'#c8a448',
+    tone:'karar anı · iki yol analizi',
+    positions:[
+      {num:'I',  name:'Sen Şu An',    desc:'iç dünya',             color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Yol A',        desc:'birinci seçenek',      color:'#7aaa50',λ:0.05, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
+      {num:'III',name:'Yol B',        desc:'ikinci seçenek',       color:'#c87898',λ:0.05, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
+      {num:'IV', name:'Gizli Etki',   desc:'görünmeyenin sesi',    color:'#6858a8',λ:-0.10,M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
+      {num:'V',  name:'Karma Mesajı', desc:'ruhun yönlendirmesi',  color:'#9878c8',λ:-0.20,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.10},
+      {num:'VI', name:'Sonuç',        desc:'seçim yapılırsa',      color:'#c8a448',λ:-0.05,M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
+    ]
+  },
+  ay: {
+    id:'ay',name:'Ay Açılımı',desc:'Döngü · Dönüşüm · Niyet',color:'#a098c8',
+    tone:'ay döngüsü · dönüşüm · niyet',
+    positions:[
+      {num:'I',  name:'Döngü',        desc:'tekrar eden örüntü',   color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'II', name:'Bırakılan',    desc:'salıverilmesi gereken',color:'#c87898',λ:0,    M:-0.10,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.45},
+      {num:'III',name:'Kazanılan',    desc:'yeni gelen enerji',    color:'#7aaa50',λ:-0.05,M:0.10, F:0.16,Φ:0.70,Lz:0.30,Kr:0.15,Cat:0.00},
+      {num:'IV', name:'Gizlenen',     desc:'karanlıktaki güç',     color:'#5aaa90',λ:-0.10,M:0,    F:0.10,Φ:0.55,Lz:0.45,Kr:0.20,Cat:0.30},
+      {num:'V',  name:'Destek',       desc:'yanındaki enerji',     color:'#98b4d0',λ:0,    M:0.15, F:0.14,Φ:0.65,Lz:0.35,Kr:0.30,Cat:0.00},
+      {num:'VI', name:'Engel',        desc:'aşılması gereken',     color:'#c49a50',λ:0,    M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.50},
+      {num:'VII',name:'Niyet',        desc:'ay niyeti',            color:'#9878c8',λ:-0.15,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+    ]
+  },
+  yasam: {
+    id:'yasam',name:'Genel Yaşam',desc:'İş · İlişki · Sağlık · Ruh · Yön',color:'#70a882',
+    tone:'genel yaşam okuma · tüm alanlar',
+    positions:[
+      {num:'I',  name:'Şu An',        desc:'genel enerji',         color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'İş & Kariyer', desc:'emek ve yaratım',      color:'#c49a50',λ:0.05, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.10,Cat:0.20},
+      {num:'III',name:'İlişkiler',    desc:'bağlar ve sevgi',      color:'#c87898',λ:0,    M:0.25, F:0.12,Φ:0.60,Lz:0.40,Kr:0.35,Cat:0.10},
+      {num:'IV', name:'Sağlık',       desc:'beden ve enerji',      color:'#7aaa50',λ:0,    M:0.10, F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.15},
+      {num:'V',  name:'Ruh & İçsel',  desc:'spiritüel yol',        color:'#9878c8',λ:-0.20,M:0,    F:0.16,Φ:0.75,Lz:0.25,Kr:0.15,Cat:0.10},
+      {num:'VI', name:'Engel',        desc:'sizi durduran',        color:'#c47f6f',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'VII',name:'Güç',          desc:'kullanılmayan potansiyel',color:'#5b8fc9',λ:-0.10,M:0,  F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'VIII',name:'Karma',       desc:'ruhsal öğreti',        color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'IX', name:'Yön',          desc:'önündeki 3 ay',        color:'#70a882',λ:-0.05,M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.15},
+    ]
+  },
+  gelecek: {
+    id:'gelecek',name:'Gelecek Yolu',desc:'Zaman · Olasılık · Kader',color:'#c8a448',
+    tone:'gelecek yolu · zaman açılımı · karmik olasılık',
+    positions:[
+      {num:'I',  name:'Şu An',          desc:'mevcut enerji',               color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Yakın Gelecek',  desc:'önümüzdeki haftalarda',       color:'#7aaa50',λ:-0.05,M:0,    F:0.13,Φ:0.68,Lz:0.32,Kr:0.12,Cat:0.10},
+      {num:'III',name:'Uzak Gelecek',   desc:'önümüzdeki aylarda',          color:'#c8a448',λ:-0.10,M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
+      {num:'IV', name:'Gizli Etki',     desc:'görünmeyenin şekillendirdiği',color:'#6858a8',λ:-0.15,M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
+      {num:'V',  name:'Sana Bağlı',     desc:'senin yaratabileceğin',       color:'#9878c8',λ:-0.10,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+      {num:'VI', name:'Kader Akışı',    desc:'değişmesi zor olan',          color:'#c87898',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.25},
+      {num:'VII',name:'Engelleyen',     desc:'dikkate alınması gereken',    color:'#c47f6f',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'VIII',name:'Senaryo A',     desc:'en olası yol',                color:'#70a882',λ:0.08, M:0.15, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
+      {num:'IX', name:'Senaryo B',      desc:'alternatif yol',              color:'#c49a50',λ:0.08, M:-0.15,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
+      {num:'X',  name:'Sonuç',          desc:'her iki yolun ortak noktası', color:'#c8a448',λ:-0.15,M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
+    ]
+  }
+};
+
+// ── CARD DATA ─────────────────────────────────────────────
+const MAJOR=[
+  {n:"Deli",s:"✦"},{n:"Büyücü",s:"✧"},{n:"Yüksek Rahibe",s:"☽"},
+  {n:"İmparatoriçe",s:"♀"},{n:"İmparator",s:"♁"},{n:"Başrahip",s:"⊕"},
+  {n:"Aşıklar",s:"♡"},{n:"Savaş Arabası",s:"⊛"},{n:"Güç",s:"∞"},
+  {n:"Ermiş",s:"◎"},{n:"Kader Çarkı",s:"⊙"},{n:"Adalet",s:"⚖"},
+  {n:"Asılı Adam",s:"⊗"},{n:"Ölüm",s:"⊘"},{n:"Denge",s:"≈"},
+  {n:"Şeytan",s:"⊖"},{n:"Kule",s:"⊟"},{n:"Yıldız",s:"★"},
+  {n:"Ay",s:"☾"},{n:"Güneş",s:"☀"},{n:"Yargı",s:"♪"},{n:"Dünya",s:"◉"}
+];
+const SUITS=[
+  {name:"Değnekler",icon:"🔥"},{name:"Kupalar",icon:"💧"},
+  {name:"Kılıçlar",icon:"💨"},{name:"Pentaküller",icon:"🌿"}
+];
+const PIPS=["As","İki","Üç","Dört","Beş","Altı","Yedi","Sekiz","Dokuz","On","Paж","Şövalye","Kraliçe","Kral"];
+const DECK=[];
+MAJOR.forEach((m,i)=>DECK.push({id:i,n:m.n,s:m.s,a:"Büyük Arcana",major:true}));
+SUITS.forEach((suit,si)=>PIPS.forEach((p,pi)=>DECK.push({id:22+si*14+pi,n:`${p} ${suit.name}`,s:suit.icon,a:"Küçük Arcana",major:false})));
+
+// ── ENGINE ────────────────────────────────────────────────
+const N=60;let running=true,tick=0;
+let lyR=3.72,lyX=0.5,lyX2=0.501,lySum=0,lyCount=0,lyLambda=0;
+let lyBuf=Array(N).fill(0.5),lyBuf2=Array(N).fill(0.5);
+const RG=18;let rgGrid=[],rgT=2.3;
+function rgInit(){rgGrid=Array.from({length:RG},()=>Array.from({length:RG},()=>Math.random()<0.5?1:-1));}
+function rgStep(){for(let k=0;k<RG*RG/2;k++){const i=Math.floor(Math.random()*RG),j=Math.floor(Math.random()*RG);const nb=[rgGrid[(i-1+RG)%RG][j],rgGrid[(i+1)%RG][j],rgGrid[i][(j-1+RG)%RG],rgGrid[i][(j+1)%RG]];const dE=2*rgGrid[i][j]*nb.reduce((a,b)=>a+b,0);if(dE<0||Math.random()<Math.exp(-dE/rgT))rgGrid[i][j]*=-1;}}
+function rgMag(){return rgGrid.flat().reduce((a,b)=>a+b,0)/(RG*RG);}
+let feStep=0,feFreq=0.09,fePhase=0,feF=0,feW=Array(N).fill(0),feB=Array(N).fill(0);
+function feStepFn(){feStep++;const v=Math.sin(feStep*feFreq+fePhase)+(Math.random()-0.5)*0.18;feW.shift();feW.push(v);const pe=v-feB[N-1];feF=pe*pe;feB.shift();feB.push(feB[feB.length-1]+0.09*pe);}
+let phiE=new Set(["0-1","1-2","2-3","3-4","4-0","0-2","1-3"]);
+const PHI_ALL=[[0,1],[1,2],[2,3],[3,4],[4,0],[0,2],[1,3],[2,4],[3,0],[4,1]];
+function pk(a,b){return `${Math.min(a,b)}-${Math.max(a,b)}`;}
+function phiVal(){let c=0;PHI_ALL.forEach(([a,b])=>{if(phiE.has(pk(a,b)))c++;});const d=c/PHI_ALL.length;let sp=0;for(let s=1;s<5;s++){let cr=0;for(let ai=0;ai<s;ai++)for(let bi=0;bi<5-s;bi++)if(phiE.has(pk(ai,s+bi)))cr++;sp=Math.max(sp,cr/(s*(5-s)*2+0.01));}return d*sp*5;}
+let lx=1,ly=0.5,lz=14,lorBuf=Array(N).fill(14);
+function lorStep(){const s=10,r=28,b=2.667,dt=0.008;lx+=s*(ly-lx)*dt;ly+=(lx*(r-lz)-ly)*dt;lz+=(lx*ly-b*lz)*dt;lorBuf.shift();lorBuf.push(lz);}
+const KN=7;let kP=[],kF=[],kK=1.2,kR=0;
+function kInit(){kP=Array.from({length:KN},()=>Math.random()*Math.PI*2);kF=Array.from({length:KN},()=>(Math.random()-0.5)*1.5);}
+function kStep(){const dt=0.06,np=[...kP];for(let i=0;i<KN;i++){let c=0;for(let j=0;j<KN;j++)c+=Math.sin(kP[j]-kP[i]);np[i]=kP[i]+(kF[i]+kK/KN*c)*dt;}kP=np;let rx=0,ry=0;kP.forEach(p=>{rx+=Math.cos(p);ry+=Math.sin(p);});kR=Math.sqrt(rx*rx+ry*ry)/KN;}
+let catU=-0.5,catV=0.1;
+function catStep(){catU+=(Math.random()-0.5)*0.02;catU=Math.max(-2,Math.min(1,catU));catV+=(Math.random()-0.5)*0.015;catV=Math.max(-1.5,Math.min(1.5,catV));}
+function catDW(){return catU<-0.1;}
+const SP=20;let spG=[],spAv=Array(N).fill(0);
+function spInit(){spG=Array.from({length:SP},()=>Array(SP).fill(0));}
+function spStep(){spG[Math.floor(SP/2)][Math.floor(SP/2)]++;let ch=true,st=0;while(ch&&st<200){ch=false;st++;for(let i=0;i<SP;i++)for(let j=0;j<SP;j++){if(spG[i][j]>=4){spG[i][j]-=4;ch=true;if(i>0)spG[i-1][j]++;if(i<SP-1)spG[i+1][j]++;if(j>0)spG[i][j-1]++;if(j<SP-1)spG[i][j+1]++;}}}spAv.shift();spAv.push(Math.min(st,50));}
+
+// ── STATE ─────────────────────────────────────────────────
+let activeSpreadId='iliski';
+let SPREAD=[];
+let usedIds=new Set();
+
+function setSpread(id){
+  activeSpreadId=id;
+  clearSpread();
+  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  const S=SPREADS[id];
+  document.getElementById('spreadDot').style.background=S.color;
+  document.getElementById('spreadNameBig').textContent=S.name;
+  document.getElementById('spreadDescSmall').textContent=S.desc;
+  updateNext();
+}
+
+function updateNext(){
+  const S=SPREADS[activeSpreadId];
+  const i=SPREAD.length;
+  const total=S.positions.length;
+  document.getElementById('prog').textContent=i+' / '+total;
+  document.getElementById('deckRem').textContent=(78-usedIds.size)+' kart';
+  if(i>=total){
+    document.getElementById('nextPosLabel').textContent='Tamamlandı';
+    document.getElementById('nextPosName').textContent='—';
+    return;
+  }
+  const P=S.positions[i];
+  document.getElementById('nextPosLabel').textContent='Sıradaki';
+  document.getElementById('nextPosName').textContent=`${P.num} · ${P.name}`;
+  document.getElementById('nextPosName').style.color=P.color;
+}
+
+// ── DECK & MAPPING ────────────────────────────────────────
+function findCard(targetId,isMajor){
+  const pool=DECK.filter(c=>c.major===isMajor&&!usedIds.has(c.id));
+  if(!pool.length){const any=DECK.filter(c=>!usedIds.has(c.id));return any.length?any[0]:null;}
+  let best=pool[0],bd=Math.abs(pool[0].id-targetId);
+  pool.forEach(c=>{const d=Math.abs(c.id-targetId);if(d<bd){bd=d;best=c;}});
+  return best;
+}
+
+function mapCard(P){
+  const lambda=lyLambda,mag=rgMag()+P.M,phi=phiVal(),lzN=(lz-10)/30,r=kR,dw=catDW();
+  const isMajor=lambda>P.λ;
+  const reversed=(feF>P.F)||(dw&&Math.random()<P.Cat)||(r<0.3&&Math.random()<P.Kr);
+  const nPhi=Math.min(1,Math.max(0,phi/3));
+  const nIdx=Math.min(1,Math.max(0,nPhi*P.Φ+(1-P.Φ)*0.5+lzN*P.Lz*0.3+(r-0.5)*P.Kr*0.15));
+  const si=Math.min(3,Math.max(0,Math.floor((mag+1)/0.5)));
+  const tid=isMajor?Math.floor(nIdx*22):22+si*14+Math.floor(nIdx*14);
+  const dc=findCard(tid,isMajor);
+  if(!dc)return null;
+  usedIds.add(dc.id);
+  return {name:dc.n,icon:dc.s,arcana:dc.a,reversed,P};
+}
+
+function drawCard(){
+  const S=SPREADS[activeSpreadId];
+  if(SPREAD.length>=S.positions.length)return;
+  const P=S.positions[SPREAD.length];
+  const card=mapCard(P);
+  if(!card)return;
+  SPREAD.push(card);
+  renderSpread();updateNext();
+  if(SPREAD.length===S.positions.length)setTimeout(showResult,600);
+}
+
+function renderSpread(){
+  const area=document.getElementById('spreadArea');
+  if(!SPREAD.length){area.innerHTML='<div class="empty-hint">Motor hazır — istediğin an çek</div>';return;}
+  area.innerHTML='';
+  SPREAD.forEach((c)=>{
+    const P=c.P;
+    const wrap=document.createElement('div');wrap.className='card-wrap';
+    const lbl=document.createElement('div');lbl.className='card-pos-lbl';
+    lbl.textContent=`${P.num}·${P.name}`;lbl.style.color=P.color;
+    const card=document.createElement('div');
+    card.className='tcard'+(c.reversed?' rev':'');
+    card.style.borderColor=P.color+'44';
+    card.innerHTML=`<div class="tc-arc">${c.arcana}</div><div class="tc-glyph">${c.icon}</div><div class="tc-name">${c.name}</div>${c.reversed?'<div class="tc-rev">ters</div>':''}`;
+    const orb=document.createElement('div');orb.className='card-orb';orb.style.background=P.color;
+    wrap.append(lbl,card,orb);area.appendChild(wrap);
+  });
+}
+
+function showResult(){
+  const panel=document.getElementById('resultPanel');
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  const S=SPREADS[activeSpreadId];
+  const list=document.getElementById('resultList');
+  list.innerHTML='';
+  SPREAD.forEach((c,i)=>{
+    const P=S.positions[i];
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="rl-pos">${P.num} · ${P.name}</span><span class="rl-card">${c.name}${c.reversed?'<span class="rl-rev"> (ters)</span>':''}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function copyPrompt(){
+  const S=SPREADS[activeSpreadId];
+  const list=SPREAD.map((c,i)=>`${S.positions[i].num} · ${S.positions[i].name}: ${c.name}${c.reversed?' (ters)':''}`).join('\n');
+  const prompt=`Bu matematik-tarot açılımını yorumla (${S.tone}):\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
+  navigator.clipboard.writeText(prompt).then(()=>{
+    const ok=document.getElementById('copyOk');
+    ok.classList.add('show');
+    setTimeout(()=>ok.classList.remove('show'),3000);
+  });
+}
+
+function clearSpread(){
+  SPREAD=[];usedIds.clear();
+  renderSpread();updateNext();
+  document.getElementById('resultPanel').style.display='none';
+}
+
+function togglePause(){
+  running=!running;
+  document.getElementById('pauseBtn').textContent=running?'⏸ Durdur':'▶ Devam';
+  if(running)loop();
+}
+
+// ── BUILD NAV ─────────────────────────────────────────────
+(function(){
+  const nav=document.getElementById('spreadNav');
+  Object.values(SPREADS).forEach(S=>{
+    const btn=document.createElement('button');
+    btn.className='snav-btn'+(S.id==='iliski'?' active':'');
+    btn.dataset.id=S.id;
+    btn.textContent=`${S.name} · ${S.positions.length} kart`;
+    btn.style.setProperty('--c',S.color);
+    btn.onclick=()=>setSpread(S.id);
+    nav.appendChild(btn);
+  });
+  setSpread('iliski');
+})();
+
+// ── MINI RENDERS ──────────────────────────────────────────
+function mL(id,buf,col,buf2,col2){
+  const c=document.getElementById(id);if(!c)return;
+  const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;
+  if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  const p=2,cw=W-p*2,ch=H-p*2;
+  const mn=Math.min(...buf),ran=Math.max(...buf)-mn||1;
+  const tx=i=>p+(i/(N-1))*cw,ty=v=>p+(1-(v-mn)/ran)*ch;
+  ctx.clearRect(0,0,W,H);
+  if(buf2){const mn2=Math.min(...buf2),ran2=Math.max(...buf2)-mn2||1;const ty2=v=>p+(1-(v-mn2)/ran2)*ch;ctx.fillStyle='rgba(100,80,180,0.05)';ctx.beginPath();buf.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));for(let i=N-1;i>=0;i--)ctx.lineTo(tx(i),ty2(buf2[i]));ctx.closePath();ctx.fill();ctx.beginPath();ctx.strokeStyle=col2;ctx.lineWidth=0.7;ctx.setLineDash([2,2]);buf2.forEach((v,i)=>i?ctx.lineTo(tx(i),ty2(v)):ctx.moveTo(tx(i),ty2(v)));ctx.stroke();ctx.setLineDash([]);}
+  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=1.2;buf.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));ctx.stroke();
+}
+function mRG(){const c=document.getElementById('c1');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cs=W/RG,ch2=H/RG;for(let i=0;i<RG;i++)for(let j=0;j<RG;j++){ctx.fillStyle=rgGrid[i][j]===1?'#182040':'#281828';ctx.fillRect(j*cs,i*ch2,cs,ch2);}}
+function mKr(){const c=document.getElementById('c5');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cx=W/2,cy=H/2,rad=Math.min(W,H)/2-3;ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.5;ctx.stroke();kP.forEach((p,i)=>{const x=cx+rad*Math.cos(p),y=cy+rad*Math.sin(p);ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fillStyle=`hsl(${Math.round(i/KN*280+220)},40%,60%)`;ctx.fill();});let rx2=0,ry2=0;kP.forEach(p=>{rx2+=Math.cos(p);ry2+=Math.sin(p);});const psi=Math.atan2(ry2,rx2);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+rad*kR*Math.cos(psi),cy+rad*kR*Math.sin(psi));ctx.strokeStyle='#9878c8';ctx.lineWidth=1.2;ctx.stroke();}
+function mCat(){const c=document.getElementById('c6');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);const p2=2,cw=W-p2*2,ch2=H-p2*2;const vs=[];for(let i=0;i<=80;i++){const x=-3+i*0.075;vs.push(x*x*x*x/4+catU*x*x/2+catV*x);}const mn=Math.min(...vs),ran=Math.max(...vs)-mn||1;const tx=i=>p2+(i/80)*cw,ty=v=>p2+(1-(v-mn)/ran)*ch2;ctx.beginPath();ctx.strokeStyle='#9878c8';ctx.lineWidth=1.2;vs.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));ctx.stroke();const mi=vs.indexOf(Math.min(...vs));ctx.beginPath();ctx.arc(tx(mi),ty(vs[mi]),2.5,0,Math.PI*2);ctx.fillStyle=catDW()?'#c87898':'#7aaa50';ctx.fill();}
+function mSand(){const c=document.getElementById('c7');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cs=W/SP,ch2=H/SP;const cols=['transparent','#101830','#182850','#2a4888','#5878c0'];for(let i=0;i<SP;i++)for(let j=0;j<SP;j++){const v=Math.min(4,spG[i][j]);if(v>0){ctx.fillStyle=cols[v];ctx.fillRect(j*cs,i*ch2,cs,ch2);}}}
+function mPhi(){const c=document.getElementById('c3');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const phi=phiVal(),fill=Math.min(1,phi/3);ctx.clearRect(0,0,W,H);ctx.fillStyle='#141430';ctx.fillRect(0,H*(1-fill),W,H*fill);ctx.fillStyle='#8c89a8';ctx.font='10px Cinzel,serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(phi.toFixed(2),W/2,H/2);}
+
+// ── LOOP ──────────────────────────────────────────────────
+function loop(){
+  tick++;
+  lySum+=Math.log(Math.abs(lyR*(1-2*lyX)));lyCount++;lyLambda=lySum/lyCount;
+  lyX=lyR*lyX*(1-lyX);lyX2=lyR*lyX2*(1-lyX2);
+  lyBuf.shift();lyBuf.push(lyX);lyBuf2.shift();lyBuf2.push(lyX2);
+  if(tick%140===0){lyR+=(Math.random()-0.5)*0.1;lyR=Math.min(4,Math.max(2.5,lyR));lySum=0;lyCount=0;}
+  rgStep();if(tick%190===0){rgT+=(Math.random()-0.5)*0.3;rgT=Math.min(5,Math.max(0.5,rgT));}
+  feStepFn();if(tick%210===0){feFreq=0.05+Math.random()*0.15;fePhase=Math.random()*Math.PI*2;}
+  if(tick%70===0){const ks=PHI_ALL.map(([a,b])=>pk(a,b));const k=ks[Math.floor(Math.random()*ks.length)];if(phiE.has(k)&&phiE.size>2)phiE.delete(k);else phiE.add(k);}
+  lorStep();kStep();if(tick%250===0){kK=0.5+Math.random()*2.5;}
+  catStep();if(tick%8===0)spStep();
+  mL('c0',lyBuf.map(v=>v*2-1),'#5b8fc9',lyBuf2.map(v=>v*2-1),'#c87898');
+  mRG();mL('c2',feW,'#5b8fc9',feB,'#c87898');mPhi();
+  mL('c4',lorBuf,'#7aaa50');mKr();mCat();mSand();
+  const phi=phiVal(),mag=rgMag();
+  document.getElementById('v0').textContent='λ='+lyLambda.toFixed(2);
+  document.getElementById('v1').textContent='T='+rgT.toFixed(1);
+  document.getElementById('v2').textContent='F='+feF.toFixed(3);
+  document.getElementById('v3').textContent='Φ='+phi.toFixed(2);
+  document.getElementById('v4').textContent='z='+lz.toFixed(1);
+  document.getElementById('v5').textContent=kR>0.8?'senkron':kR>0.5?'kısmi':'ayrık';
+  document.getElementById('v6').textContent=catDW()?'çift':'tek';
+  document.getElementById('v7').textContent=(spAv.reduce((a,b)=>a+b,0)/N).toFixed(0);
+  if(running)requestAnimationFrame(loop);
+}
+
+rgInit();for(let i=0;i<20;i++)rgStep();
+kInit();spInit();
+setTimeout(loop,150);
+</script>
+</body>
+</html>
