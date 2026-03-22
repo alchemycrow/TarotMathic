@@ -1236,9 +1236,12 @@ async function checkGate(){
   btn.disabled=false;
 }
 
-// Auto-pass if already authenticated
-if(localStorage.getItem('tarot_auth')){
+// Auto-pass if already authenticated (ignore old '1' value)
+const _stored = localStorage.getItem('tarot_auth');
+if(_stored && _stored !== '1'){
   document.getElementById('gate').style.display='none';
+} else if(_stored === '1'){
+  localStorage.removeItem('tarot_auth');
 }
 
 rgInit();for(let i=0;i<20;i++)rgStep();
