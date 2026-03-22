@@ -564,7 +564,7 @@ function mapCard(P){
   const nPhi=Math.min(1,Math.max(0,phi/3));
   const nIdx=Math.min(1,Math.max(0,nPhi*P.Φ+(1-P.Φ)*0.5+lzN*P.Lz*0.3+(r-0.5)*P.Kr*0.15));
   const suitNoise = (Math.random()-0.5)*0.4;
-  const si=Math.min(3,Math.max(0,Math.floor(((mag+P.M+1+suitNoise)/2)*4)));
+  const si=Math.min(3,Math.max(0,Math.floor(((mag+1+suitNoise)/2)*4)));
   const tid=isMajor?Math.floor(nIdx*22):22+si*14+Math.floor(nIdx*14);
   const dc=findCard(tid,isMajor);
   if(!dc)return null;
