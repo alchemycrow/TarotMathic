@@ -161,6 +161,19 @@ canvas.mini{width:100%;height:34px;border-radius:3px;background:var(--ink3);disp
   margin-top:8px;font-style:italic;opacity:0;transition:opacity 0.3s;
 }
 .copy-ok.show{opacity:1;}
+.interp-panel{margin-top:1.2rem;border-top:0.5px solid var(--rim);padding-top:1.2rem;display:none;}
+.interp-loading{text-align:center;padding:2rem;font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.2em;color:var(--fog);}
+.interp-dot{display:inline-block;animation:blink 1.4s infinite;}
+.interp-dot:nth-child(2){animation-delay:0.2s;}
+.interp-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+.interp-hdr{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.22em;color:var(--amethyst);text-transform:uppercase;margin-bottom:1rem;text-align:center;}
+.interp-text{font-size:16px;line-height:1.85;color:var(--paper);}
+.interp-text h1,.interp-text h2,.interp-text h3{font-family:'Cinzel',serif;font-weight:400;color:var(--gold);margin:1.4rem 0 0.6rem;font-size:0.9rem;letter-spacing:0.15em;}
+.interp-text h1{font-size:1rem;text-align:center;margin-bottom:1rem;}
+.interp-text p{margin-bottom:0.9rem;}
+.interp-text em{color:var(--mist);font-style:italic;}
+.interp-error{text-align:center;padding:1.5rem;font-size:14px;color:var(--rose);font-style:italic;}
 
 /* About section */
 .about{padding:2rem 0;border-top:0.5px solid var(--rim);}
@@ -269,8 +282,12 @@ footer{
 <div class="result-panel" id="resultPanel">
   <div class="result-hdr">Açılım Tamamlandı</div>
   <ul class="result-list" id="resultList"></ul>
-  <button class="copy-btn" onclick="copyPrompt()">Claude'a Gönder — Kopyala</button>
-  <div class="copy-ok" id="copyOk">Kopyalandı ✦ Claude'a yapıştır</div>
+  <button class="copy-btn" id="interpBtn" onclick="getInterpretation()">Yorumu Al ✦</button>
+  <div class="copy-ok" id="copyOk"></div>
+  <div class="interp-panel" id="interpPanel">
+    <div class="interp-hdr">Karmik Yorum</div>
+    <div id="interpContent"></div>
+  </div>
 </div>
 
 <!-- About -->
@@ -582,13 +599,61 @@ function showResult(){
   });
 }
 
-function copyPrompt(){
+const WORKER_URL='https://tarot-proxy.cevikgun.workers.dev';
+
+function buildPrompt(){
   const S=SPREADS[activeSpreadId];
   const list=SPREAD.map((c,i)=>`${S.positions[i].num} · ${S.positions[i].name}: ${c.name}${c.reversed?' (ters)':''}`).join('\n');
-  const prompt=`Bu matematik-tarot açılımını yorumla (${S.tone}):\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
-  navigator.clipboard.writeText(prompt).then(()=>{
+  return `Bu matematik-tarot açılımını yorumla (${S.tone}):\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
+}
+
+async function getInterpretation(){
+  const btn=document.getElementById('interpBtn');
+  const panel=document.getElementById('interpPanel');
+  const content=document.getElementById('interpContent');
+  btn.disabled=true;
+  btn.textContent='Yorum geliyor...';
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  content.innerHTML='<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
+  const prompt=buildPrompt();
+  const systemPrompt=`Sen deneyimli bir karmik tarot okuyucususun. Rachel Pollack'ın Seventy-Eight Degrees of Wisdom, Skye Alexander'ın The Modern Witchcraft Book of Tarot ve diğer tarot kaynaklarından beslenen derin bir bilgelikle okuma yapıyorsun. Tonun: sıcak, karmik, witch gibi gizemli ama korkusuz. Ruhun sonsuzluğu, karma ve tekamül perspektifi. Kartları ters/düz, sayısal/sembolik ve karmik katmanda yorumla. Çıkış yolu veren, umut taşıyan bir ton kullan.`;
+  try{
+    const res=await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system:systemPrompt,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content&&data.content[0]&&data.content[0].text;
+    if(text){
+      // Convert markdown to simple HTML
+      const html=text
+        .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+        .replace(/^## (.+)$/gm,'<h2>$2</h2>'.replace('$2','$1'))
+        .replace(/^## (.+)$/gm,(m,p1)=>'<h2>'+p1+'</h2>')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/^---+$/gm,'<hr style="border:none;border-top:0.5px solid var(--rim);margin:1rem 0;">')
+        .split('\n\n').map(p=>p.trim()?'<p>'+p.replace(/\n/g,' ')+'</p>':'').join('');
+      content.innerHTML='<div class="interp-text">'+html+'</div>';
+    } else {
+      content.innerHTML='<div class="interp-error">Yorum alınamadı. Tekrar deneyin.</div>';
+    }
+  } catch(e){
+    content.innerHTML='<div class="interp-error">Bağlantı hatası: '+e.message+'</div>';
+  }
+  btn.disabled=false;
+  btn.textContent='Yeniden Al ✦';
+}
+
+function copyPrompt(){
+  navigator.clipboard.writeText(buildPrompt()).then(()=>{
     const ok=document.getElementById('copyOk');
-    ok.classList.add('show');
+    ok.textContent='Kopyalandı ✦';ok.classList.add('show');
     setTimeout(()=>ok.classList.remove('show'),3000);
   });
 }
