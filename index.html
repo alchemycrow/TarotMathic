@@ -610,53 +610,57 @@ function buildPrompt(){
 async function getInterpretation(){
   const btn=document.getElementById('interpBtn');
   const panel=document.getElementById('interpPanel');
-  const content=document.getElementById('interpContent');
+  const cont=document.getElementById('interpContent');
   btn.disabled=true;
   btn.textContent='Yorum geliyor...';
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-  content.innerHTML='<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
-  const prompt=buildPrompt();
-  const systemPrompt=`Sen deneyimli bir karmik tarot okuyucususun. Rachel Pollack'ın Seventy-Eight Degrees of Wisdom, Skye Alexander'ın The Modern Witchcraft Book of Tarot ve diğer tarot kaynaklarından beslenen derin bir bilgelikle okuma yapıyorsun. Tonun: sıcak, karmik, witch gibi gizemli ama korkusuz. Ruhun sonsuzluğu, karma ve tekamül perspektifi. Kartları ters/düz, sayısal/sembolik ve karmik katmanda yorumla. Çıkış yolu veren, umut taşıyan bir ton kullan.`;
+  cont.innerHTML='<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
+
+  const S=SPREADS[activeSpreadId];
+  const cardContext=SPREAD.map((c,i)=>{
+    const P=S.positions[i];
+    const k=CARD_DB[c.name];
+    let info=`${P.num} · ${P.name}: ${c.name}${c.reversed?' (TERS)':''}`;
+    if(k){
+      const meaning=c.reversed?k.reversed:k.upright;
+      info+=`\n  Anlam: ${meaning}`;
+      info+=`\n  Karmik katman: ${k.karmic}`;
+    }
+    return info;
+  }).join('\n\n');
+
+  const extra=S.id==='iliski'||S.id==='karar'?'Senaryo kartları için ayrı karmik yol analizi. ':'';
+  const userMsg=`Açılım: ${S.name} (${S.tone})\n\n${cardContext}\n\nYukarıdaki kart bilgilerini içselleştirerek derin, karmik bir yorum yaz. Her pozisyon 2-3 cümle. ${extra}Sonda genel sentez. Minimum 500 kelime.`;
+
   try{
     const res=await fetch(WORKER_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        system:systemPrompt,
-        messages:[{role:'user',content:prompt}]
-      })
+      body:JSON.stringify({system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]})
     });
     const data=await res.json();
     const text=data.content&&data.content[0]&&data.content[0].text;
     if(text){
-      // Convert markdown to simple HTML
       const html=text
         .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-        .replace(/^## (.+)$/gm,'<h2>$2</h2>'.replace('$2','$1'))
         .replace(/^## (.+)$/gm,(m,p1)=>'<h2>'+p1+'</h2>')
+        .replace(/^### (.+)$/gm,(m,p1)=>'<h3>'+p1+'</h3>')
         .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
         .replace(/\*(.+?)\*/g,'<em>$1</em>')
         .replace(/^---+$/gm,'<hr style="border:none;border-top:0.5px solid var(--rim);margin:1rem 0;">')
         .split('\n\n').map(p=>p.trim()?'<p>'+p.replace(/\n/g,' ')+'</p>':'').join('');
-      content.innerHTML='<div class="interp-text">'+html+'</div>';
+      cont.innerHTML='<div class="interp-text">'+html+'</div>';
     } else {
-      content.innerHTML='<div class="interp-error">Yorum alınamadı. Tekrar deneyin.</div>';
+      cont.innerHTML='<div class="interp-error">Hata: '+(data.error?.message||'Bilinmeyen')+'</div>';
     }
   } catch(e){
-    content.innerHTML='<div class="interp-error">Bağlantı hatası: '+e.message+'</div>';
+    cont.innerHTML='<div class="interp-error">Bağlantı hatası: '+e.message+'</div>';
   }
   btn.disabled=false;
   btn.textContent='Yeniden Al ✦';
 }
 
-function copyPrompt(){
-  navigator.clipboard.writeText(buildPrompt()).then(()=>{
-    const ok=document.getElementById('copyOk');
-    ok.textContent='Kopyalandı ✦';ok.classList.add('show');
-    setTimeout(()=>ok.classList.remove('show'),3000);
-  });
-}
 
 function clearSpread(){
   SPREAD=[];usedIds.clear();
@@ -731,8 +735,465 @@ function loop(){
   if(running)requestAnimationFrame(loop);
 }
 
+
+// ── SYSTEM PROMPT ─────────────────────────────────────────
+const SYSTEM_PROMPT = 'Sen derin bir tarot bilgesisin. Rachel Pollack\'ın "Seventy-Eight Degrees of Wisdom", Alejandro Jodorowsky\'nin "The Way of Tarot", Skye Alexander\'ın "The Modern Witchcraft Book of Tarot" ve Mary K. Greer\'in "Tarot for Your Self" eserlerinden beslenen, karmik ve ruhsal bir perspektife sahipsin.\n\nYORUM STİLİ:\n- Ton: Sıcak, mistik, witch gibi gizemli ama asla korkutucu değil. Ruhun sonsuzluğunu bilen biri gibi konuş.\n- Karmik katman: Her kartı "bu ruhun hangi dersi öğrenmek için geldiği" sorusundan yorumla.\n- Ters kartlar: Enerji bloke veya içe dönmüş — "kötü" değil, "henüz açılmamış" olarak gör.\n- Tekrar eden kartlar: Aynı kart birden fazla açılımda çıkıyorsa bunu özellikle belirt.\n- Çıkış yolu: Her zorlukta bir kapı göster. Ruh çıkmaza girmez, yavaşlar.\n- Minimum 500 kelime. Her pozisyon 2-3 cümle, senaryo kartları ayrı analiz, sonunda sentez.\n\nKART BİLGİSİ: Sana her çekilen kartın Pollack perspektifli karmik özeti verilecek. Bunu kullan ama birebir tekrarlama — içselleştir, sentezle.';
+
 // ── GATE ──────────────────────────────────────────────────
-const GATE_PASS = 'c1k0l0v3s2hug'; // şifreyi burdan değiştir
+
+// ── CARD DATABASE ─────────────────────────────────────────
+const CARD_DB = {
+  "Deli": {
+    arcana:"major", upright:"Saf potansiyel, başlangıçların eşiği, sonsuz olasılık. Ruh bedene ilk adımını atarken taşıdığı o ilk heyecan.",
+    reversed:"Dikkatsizlik, sorumsuzluk, başlamaktan korku ya da tam tersi—düşünmeden atlamak.",
+    karmic:"Ruhun bu bedene ilk kez girdiği andaki masumiyeti. Karma dersi: deneyim kazanmak için düşmek gerekir, düşmekten korkmak değil."
+  },
+  "Büyücü": {
+    arcana:"major", upright:"İrade, beceri, manifestasyon gücü. Yukarıdaki aşağıda, içerideki dışarıda—dört elementi bir arada tutan bilinçli irade.",
+    reversed:"Manipülasyon, yeteneklerin kötüye kullanımı, kandırma, potansiyelin boşa harcanması.",
+    karmic:"Karmik tema: Bu yaşamda öğrenilmesi gereken ders, ham gücün sorumlu kullanımı. Geçmiş yaşamlarda güç suistimali olabilir."
+  },
+  "Yüksek Rahibe": {
+    arcana:"major", upright:"Sezgi, gizem, iç bilgelik, bilinçdışının sesi. Söylenmeyeni bilmek, görünmeyeni görmek.",
+    reversed:"Sezginin bastırılması, sırların saklanması, iç sesi dışarıdaki gürültüye kaptırma.",
+    karmic:"Karmik tema: Ruhun en derin katmanlarında saklanan bilgelik. Ata ruhlarıyla bağlantı, önceki yaşamların birikimi."
+  },
+  "İmparatoriçe": {
+    arcana:"major", upright:"Bereket, doğurganlık, duygu zengini yaratıcılık, annelik enerjisi, doğayla uyum.",
+    reversed:"Aşırı bağımlılık, kontrolcülük, ihmal, yaratıcı tıkanma, bedensel yoksunluk.",
+    karmic:"Karmik tema: Vermek ve almak arasındaki kadim denge. Önceki yaşamlarda ya aşırı fedakarlık ya da aşırı bencillik izleri."
+  },
+  "İmparator": {
+    arcana:"major", upright:"Yapı, düzen, otorite, güvenlik zemini. Kaos üzerine düzen inşa etme kapasitesi.",
+    reversed:"Tiranlık, katılık, kontrolü bırakamama, babadan gelen yaralar, güvensiz temel.",
+    karmic:"Karmik tema: Güç ve sorumluluk arasındaki ilişki. Otorite figürleriyle geçmiş yaşam sözleşmeleri."
+  },
+  "Başrahip": {
+    arcana:"major", upright:"Gelenek, öğreti, ruhsal rehberlik, toplumsal değerler, görünür öğretmen.",
+    reversed:"Dogmatizm, körü körüne itaat, dışarıdan dayatılan inançlar, gerçek özgürlüğü kısıtlayan kurallar.",
+    karmic:"Karmik tema: Ruhsal otorite ile bireysel özgürlük arasındaki gerilim. Din, kültür veya aile sisteminden taşınan inançlar."
+  },
+  "Aşıklar": {
+    arcana:"major", upright:"Özgür seçimle kurulan bağ, değerlere göre karar alma, gerçek uyum, kalp ile akıl birliği.",
+    reversed:"Seçim kaçınma, yanlış değerlere bağlanma, iki taraf arasında kalmak, gerçek olmayan birliktelik.",
+    karmic:"Karmik tema: Ruhlar arasındaki kadim sözleşmeler. Twin flame ve soulmate bağları. Seçim özgürlüğü dersi."
+  },
+  "Savaş Arabası": {
+    arcana:"major", upright:"Zıt güçleri tek yönde sürebilme, irade zaferi, odaklanmış hareket, kontrol altındaki güç.",
+    reversed:"Kontrolü kaybetme, zıt yönlerde çekilme, agresif bastırma, çatışmayı yönetememe.",
+    karmic:"Karmik tema: Çatışmadan kaçınmak yerine onunla dans etmeyi öğrenmek. Savaşçı ruh geçmişi."
+  },
+  "Güç": {
+    arcana:"major", upright:"İçsel otorite, sevgiyle gelen güç, aslanla barış, sabır ve cesaret birlikteliği.",
+    reversed:"Bastırılmış güç, dışa vurulan öfke veya tam tersi tamamen bastırma, kendi aslanından korku.",
+    karmic:"Karmik tema: Ham gücü sevgiyle dönüştürme dersi. Geçmiş yaşamlarda güçsüzlük ya da zalimlik izleri."
+  },
+  "Ermiş": {
+    arcana:"major", upright:"İç ışık, kendi bilgeliğini bulma, içe çekilme ve rehberlik, doğru anın beklenmesi.",
+    reversed:"İzolasyon, kendi ışığını saklamak, dış onaya aşırı bağımlılık, rehberliği reddetmek.",
+    karmic:"Karmik tema: Kendi öğretmenin olmak. Ata ruhlarıyla bağlantı. Yalnızlıkla barışmak."
+  },
+  "Kader Çarkı": {
+    arcana:"major", upright:"Döngülerin dönüşü, yeni bir evrenin başlangıcı ya da eskisinin kapanışı, karmik momentum.",
+    reversed:"Döngü içinde sıkışma, değişime direnç, örüntüleri görememe, kadere teslim olmama.",
+    karmic:"Karmik tema: Çok yaşamlı döngüler. Bu hayatta kapanmak üzere olan karmik döngüler. Tesadüf yoktur."
+  },
+  "Adalet": {
+    arcana:"major", upright:"Hakikat, denge, hesap, her şeyin kendi ağırlığınca değerlendirilmesi, netleşme.",
+    reversed:"Haksızlık, taraflı yargı, sonuçlardan kaçma, sorumluluk almama.",
+    karmic:"Karmik tema: Karmik denge yasası. Bu hayatta ödenmesi gereken borçlar veya alınacak haklar. Gerçek adalet kendiliğinden gelir."
+  },
+  "Asılı Adam": {
+    arcana:"major", upright:"Bırakış, yeni perspektif için eski konumdan vazgeçme, bilinçli duraklama, teslim olma.",
+    reversed:"Gereksiz özveride inat, kurban rolü, bırakmayı reddediş, kontrol takıntısı.",
+    karmic:"Karmik tema: Teslim olmayı öğrenmek. Kontrol illüzyonunu bırakmak. Ruh'un zaman kavramı bedeninkinden farklıdır."
+  },
+  "Ölüm": {
+    arcana:"major", upright:"Dönüşüm, tamamlanmış bir şeyin doğal sonu, yeniden doğuş için alan açma, geçiş.",
+    reversed:"Değişime direnç, eskiyi tutunma, tamamlanmamış geçiş, yarım kalan bırakış.",
+    karmic:"Karmik tema: Ruhun yeniden doğuş döngüsü. Bu hayatta tamamlanması gereken bir şey var. Ölüm değil, dönüşüm."
+  },
+  "Denge": {
+    arcana:"major", upright:"Akış, ölçülülük, sabır, iki zıttı bir arada tutma, ritmik denge, zamanın bilgeliği.",
+    reversed:"Aşırılık, sabırsızlık, dengesizlik, iki şeyi aynı anda isteyip hiçbirini tam alamama.",
+    karmic:"Karmik tema: Zamanlamanın mükemmelliğine güvenmek. Acele edilmiş karmik dersler tekrar gelir."
+  },
+  "Şeytan": {
+    arcana:"major", upright:"Gölgenin farkındalığı, bağlanmaların görülmesi, materyal dünyanın tuzaklarını tanıma.",
+    reversed:"Zincirlerin fark edilmesi, bağımlılıktan yavaş kurtuluş, gölgeyle yüzleşme cesareti.",
+    karmic:"Karmik tema: Ruhun özgür irade testleri. Bağımlılık örüntüleri çok yaşamlar boyu tekrar eder."
+  },
+  "Kule": {
+    arcana:"major", upright:"Ani yıkım, sahte temellerin çöküşü, özgürleştirici yıkılma, gerçeğin gün yüzüne çıkması.",
+    reversed:"Yıkımdan önce uyarılar, kaçınılan ama zorunlu çöküş, inkar.",
+    karmic:"Karmik tema: Gerçek olmayan hiçbir şey sonsuza kadar ayakta duramaz. Kule yıkar ama yalnızca gerçek olmayanı."
+  },
+  "Yıldız": {
+    arcana:"major", upright:"Umut, iyileşme, ilham, karanlık sonrası aydınlık, ruhun yenilenme kapasitesi.",
+    reversed:"Umutsuzluk, iyileşmeye direnç, ilhamı görememe, kırılganlıktan kaçınma.",
+    karmic:"Karmik tema: Ruhun doğal iyileşme kapasitesi. Her geçiş sonrasında yıldız bekler."
+  },
+  "Ay": {
+    arcana:"major", upright:"Bilinçdışı, illüzyonlar, korkular, karanlıktaki gerçekler, dalgalanan duygular.",
+    reversed:"Korkuyla yüzleşme başlangıcı, illüzyonların dağılması, bilinçdışı mesajlar.",
+    karmic:"Karmik tema: Önceki yaşamlardan gelen korkular ve örüntüler. Bilinçdışı hafıza."
+  },
+  "Güneş": {
+    arcana:"major", upright:"Sevinç, aydınlık, başarı, çocuksu canlılık, netlik ve şeffaflık.",
+    reversed:"Sevinçten uzaklaşma, aşırı ciddiyet, yaratıcı engel.",
+    karmic:"Karmik tema: Ruhun doğal ışık hali. Sevinç bir hak, bir ödül değil."
+  },
+  "Yargı": {
+    arcana:"major", upright:"Uyanış, yenilenme, çağrıya cevap verme, yeniden doğuş, geçmişi bütünleştirme.",
+    reversed:"Çağrıyı duymama, uyanışa direnç, geçmiş hataları bırakamama.",
+    karmic:"Karmik tema: Ruhsal uyanış çağrısı. Bu yaşamın misyonuna cevap verme zamanı."
+  },
+  "Dünya": {
+    arcana:"major", upright:"Tamamlanma, bütünlük, bir döngünün mükemmel kapanışı, evrensel uyum.",
+    reversed:"Tamamlanmamışlık, son adımı atmaktan çekinme, özgürlükten korku.",
+    karmic:"Karmik tema: Ruhun bu yaşamdaki misyonunun tamamlanması. Bütünlük içinde dans."
+  },
+  "As Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Yeni bir ateşin başlangıcı, ham yaratıcı güç, ilk kıvılcım.",
+    reversed:"Gecikme, potansiyel henüz açığa çıkmamış.",
+    karmic:"Ruhun bu yaşama getirdiği ham enerji."
+  },
+  "İki Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Planlama, vizyon, dünyaya bakış, seçim eşiği.",
+    reversed:"Korku nedeniyle hareketsizlik, planı hayata geçirememe.",
+    karmic:"İki yol arasında ruhsal seçim."
+  },
+  "Üç Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"İlerleme, ufkun genişlemesi, beklenen gelişme.",
+    reversed:"Gecikmeler, hayal kırıklığı, beklenenden uzun süre.",
+    karmic:"Sabır ve bekleme karmik dersi."
+  },
+  "Dört Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Kutlama, temel atma, eve kavuşma, köklü güven.",
+    reversed:"Sürdürülemeyen mutluluk, aile gerilimi.",
+    karmic:"Güvenli bir zemin kurma karmik misyonu."
+  },
+  "Beş Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Çatışma, rekabet, görüş ayrılığı, enerji dağılması.",
+    reversed:"Çatışmaktan kaçınma ya da uzlaşma.",
+    karmic:"Gerilimden büyüme karmik dersi."
+  },
+  "Altı Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Zafer, takdir, başarı, toplumsal onay.",
+    reversed:"Gurur, başarının gölgesi, onay bağımlılığı.",
+    karmic:"Başarı ve alçakgönüllülük dengesi."
+  },
+  "Yedi Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Savunma, kendi pozisyonunu koruma, kararlılık.",
+    reversed:"Vazgeçme, meydan okuyanlardan kaçma.",
+    karmic:"Değerler için duruş karmik dersi."
+  },
+  "Sekiz Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Hız, acele mesajlar, hareketin ivmesi.",
+    reversed:"Gecikmeler, sinirlilik, yanlış zamanlama.",
+    karmic:"Akışa bırakmak vs. zorlamak."
+  },
+  "Dokuz Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Dayanıklılık, son adıma yaklaşmak, yorgun ama ayakta.",
+    reversed:"Paranoya, aşırı savunmacılık, güvensizlik.",
+    karmic:"Bitirme gücü karmik dersi."
+  },
+  "On Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Aşırı yük, çok fazla sorumluluk, baskı.",
+    reversed:"Yükü bırakma zamanı, yardım istemek.",
+    karmic:"Sınır koyma ve devretme dersi."
+  },
+  "Paж Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Heyecan, yeni bir ateşin habercisi, cesur keşif.",
+    reversed:"Dağınıklık, başladığını bitirememek.",
+    karmic:"Ham tutkunun olgunlaşması."
+  },
+  "Şövalye Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Hızlı hareket, tutku dolu eylem, macera.",
+    reversed:"Düşünmeden atılma, saldırganlık.",
+    karmic:"Cesaret ile ihtiyatın dengesi."
+  },
+  "Kraliçe Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Karizmatik güç, öz güven, sıcaklık, yaratıcı otorite.",
+    reversed:"Egosantrizm, kıskançlık, manipülasyon.",
+    karmic:"Güç ve şefkat birlikteliği."
+  },
+  "Kral Değnekler": {
+    arcana:"minor", suit:"Değnekler", element:"Ateş",
+    upright:"Vizyon sahibi liderlik, ilham verici otorite, büyük resmi görmek.",
+    reversed:"Baskıcılık, acelecilik, özgür ruhları kısıtlama.",
+    karmic:"Vizyon ve sorumluluk dengesi."
+  },
+  "As Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Duygusal doluluk, sevginin başlangıcı, sezginin açılması.",
+    reversed:"Duygusal blok, kalbi kapatma.",
+    karmic:"Saf sevgi kapasitesinin uyanışı."
+  },
+  "İki Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Karşılıklı bağ, iki ruh arasında köprü, denge içinde birliktelik.",
+    reversed:"İlişkide dengesizlik, tek taraflı bağ.",
+    karmic:"Karşılıklılık ve eşitlik karmik dersi."
+  },
+  "Üç Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Kutlama, topluluk, paylaşılan sevinç, dostluk.",
+    reversed:"Sosyal izolasyon, paylaşamama.",
+    karmic:"Birliktelik ve topluluk enerjisi."
+  },
+  "Dört Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"İçe kapanma, memnuniyetsizlik, yeni fırsatı görememek.",
+    reversed:"Durgunluktan uyanma, yeni fırsatı görme.",
+    karmic:"Minnettarlık ve farkındalık dersi."
+  },
+  "Beş Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Kayıp yasası, dökülen kahehlere odaklanma, üzüntü.",
+    reversed:"Ayakta kalanları görmeye başlama, iyileşme.",
+    karmic:"Kaybı kabullenip devam etme."
+  },
+  "Altı Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Geçmiş, masumiyet, eski anılar, nostaljik sıcaklık.",
+    reversed:"Geçmişte takılı kalma, ilerlemeye direnç.",
+    karmic:"Geçmişi bütünleştirme ve ilerleme."
+  },
+  "Yedi Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Hayal, illüzyon, çok fazla seçenek, kaçış.",
+    reversed:"Gerçeklikle yüzleşme, seçim yapma zamanı.",
+    karmic:"Hayal ile gerçek arasında denge."
+  },
+  "Sekiz Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Terk etme, anlam arayışı, daha derin bir şeyin çağrısı.",
+    reversed:"Geri dönme, terk edememe, anlamsızlık.",
+    karmic:"Anlam arayışı cesareti."
+  },
+  "Dokuz Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Tatmin, duygusal bolluk, dileğin gerçekleşmesi.",
+    reversed:"Yüzeysel doyum, gerçek mutluluğu kaçırma.",
+    karmic:"Gerçek tatmin ile yanılsama farkı."
+  },
+  "On Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Duygusal tamamlanma, aile mutluluğu, kalıcı sevinç.",
+    reversed:"Yüzeysel mutluluk, aile dinamiği sorunu.",
+    karmic:"Duygusal bütünlük karmik tamamlanması."
+  },
+  "Paж Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Duygusal mesaj, sezgisel fısıltı, hayal gücünün habercisi.",
+    reversed:"Aşırı hassasiyet, gerçekle hayalin karışması.",
+    karmic:"Sezgi ile mantığın dengelenmesi."
+  },
+  "Şövalye Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Romantik eylem, duygusal idealizm, şiirsel yürek.",
+    reversed:"Gerçekten kopuk romantizm, manipülatif çekicilik.",
+    karmic:"Derin bağ ile yüzeysel çekim ayrımı."
+  },
+  "Kraliçe Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Empatik derinlik, duygusal zeka, besleyici güç.",
+    reversed:"Duygusal manipülasyon, aşırı empati—kendini kaybetme.",
+    karmic:"Sınır içinde sevmek."
+  },
+  "Kral Kupalar": {
+    arcana:"minor", suit:"Kupalar", element:"Su",
+    upright:"Duygusal olgunluk, derin empati, kontrollü his.",
+    reversed:"Duygusal soğukluk, hisleri bastırma.",
+    karmic:"Duyguyu ifade etmek ile kontrol etmek."
+  },
+  "As Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Zihinsel netlik, hakikatin keskin kılıcı, yeni bir düşüncenin doğuşu.",
+    reversed:"Zihinsel kaos, kafa karışıklığı.",
+    karmic:"Hakikati söyleme ve duyma cesareti."
+  },
+  "İki Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Karar vermeme, denge halinde gerginlik, görmek istememe.",
+    reversed:"Gözlerden bağın düşmesi, zorlu kararı almak.",
+    karmic:"Belirsizlikle barışmak ve sonunda seçmek."
+  },
+  "Üç Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Kalp kırıklığı, acı veren hakikat, üzücü ama gerekli netleşme.",
+    reversed:"Acıyı işlemeye başlama, yavaş iyileşme.",
+    karmic:"Acıyı reddetmek yerine kucaklamak."
+  },
+  "Dört Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Dinlenme, zihinsel iyileşme, geri çekilme.",
+    reversed:"Zorla harekete geçme, gereken dinlenmeyi reddediş.",
+    karmic:"İyileşme için dur, izin ver."
+  },
+  "Beş Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Kayıp, çatışma sonrası acı, kazanılan ama pahalı zafer.",
+    reversed:"Utanç bırakma, çatışmadan öğrenme.",
+    karmic:"Hangi savaşların değer taşıdığını bilmek."
+  },
+  "Altı Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Geçiş, sakin sulara doğru yolculuk, sorundan uzaklaşma.",
+    reversed:"Kaçıştan dönme, geçişe hazır olmama.",
+    karmic:"İlerlemek için eskiyi bırakmak."
+  },
+  "Yedi Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Strateji, akıllıca hareket, gizli plan.",
+    reversed:"Kandırıcılık, doğrudan olmama.",
+    karmic:"Dürüstlük ile stratejinin dengesi."
+  },
+  "Sekiz Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Zihinsel hapishane, kendi koyduğun sınırlar, mağduriyet.",
+    reversed:"Zihinsel kısıtlamadan kurtuluş başlangıcı.",
+    karmic:"Zihin hapishanesi özgür iradenin bir testidir."
+  },
+  "Dokuz Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Kaygı, gece korkuları, zihinsel acı.",
+    reversed:"Kaygıyla yüzleşme, yardım aramak.",
+    karmic:"Zihnin yarattığı acı ile gerçek acının ayrımı."
+  },
+  "On Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Bir dönemin acı sonu, yenilgi, dönüm noktası.",
+    reversed:"Yenilgiden kalkmak, yeni başlangıç.",
+    karmic:"Her son bir başlangıçtır."
+  },
+  "Paж Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Keskin zeka, merak, hızlı düşünce, yeni fikir.",
+    reversed:"Düşünmeden konuşma, acı eleştiri.",
+    karmic:"Zeka ile empatiyi birleştirmek."
+  },
+  "Şövalye Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Hızlı düşünce ve eylem, kararlı hareket.",
+    reversed:"Saldırganlık, sabırsızlık, düşünmeden atılma.",
+    karmic:"Hız ile öngörüyü dengelemek."
+  },
+  "Kraliçe Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Analitik zeka, bağımsız düşünce, acı gerçeği söyleme.",
+    reversed:"Soğukluk, keskin dil, acımasız yargı.",
+    karmic:"Gerçeği sevgiyle söylemek."
+  },
+  "Kral Kılıçlar": {
+    arcana:"minor", suit:"Kılıçlar", element:"Hava",
+    upright:"Adil yargı, entelektüel otorite, mantıklı liderlik.",
+    reversed:"Soğuk otoriter yargı, duygusuzluk.",
+    karmic:"Adalet ve merhamet birlikteliği."
+  },
+  "As Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Yeni maddi fırsat, güvenli zemin, somut başlangıç.",
+    reversed:"Güvensiz zemin, maddi fırsatı kaçırma.",
+    karmic:"Bu dünyada var olmayı öğrenmek."
+  },
+  "İki Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Denge, değişen koşullara adapte olma, esneklik.",
+    reversed:"Dengesizlik, çok fazla şeyi idare etmeye çalışma.",
+    karmic:"Uyum ve akış içinde pratiklik."
+  },
+  "Üç Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"İşbirliği, çalışma mükemmelliği, takım başarısı.",
+    reversed:"Motivasyon kaybı, çabayı takdir etmeme.",
+    karmic:"Birlikte yaratma dersi."
+  },
+  "Dört Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Güvenlik ihtiyacı, biriktirme, kontrolde tutma.",
+    reversed:"Cimrilik ya da kontrolü bırakmak.",
+    karmic:"Güvenlik ve paylaşım dengesi."
+  },
+  "Beş Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Maddi zorluk, dışlanmışlık hissi, güvensizlik.",
+    reversed:"Yardım kapısına doğru dönüş, kabul.",
+    karmic:"Yoksulluğun ruhsal dersleri."
+  },
+  "Altı Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Cömertlik, denge içinde verme/alma, maddi denge.",
+    reversed:"Dengesiz paylaşım, bağımlılık.",
+    karmic:"Vermek ve almak arasındaki kutsal denge."
+  },
+  "Yedi Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Sabırlı bekleme, ekim sonrası beklenti, değerlendirme.",
+    reversed:"Hayal kırıklığı, yanlış yatırım.",
+    karmic:"Emek ve sabırla beklemek."
+  },
+  "Sekiz Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Ustalık, zanaata adanma, detaylara özen.",
+    reversed:"Mükemmeliyetçilik, takıntılı çalışma.",
+    karmic:"Zanaatın meditasyona dönüşmesi."
+  },
+  "Dokuz Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Öz yeterlililk, kazanılmış lüks, bağımsızlık.",
+    reversed:"Aşırı bağımsızlık, yalnızlık.",
+    karmic:"Güvenlik içinde özgürlük."
+  },
+  "On Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Aile mirası, kuşaklar boyu güvenlik, uzun vadeli başarı.",
+    reversed:"Aile dinamiklerinde sorun, mirastaki karmaşa.",
+    karmic:"Mirası aktarma ve alma."
+  },
+  "Paж Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Pratik öğrenme, yeni bir işin habercisi, somut adım.",
+    reversed:"Hayal kırıklığı, tembellik, pratik olmama.",
+    karmic:"Büyük hayalleri küçük adımlara çevirmek."
+  },
+  "Şövalye Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Metodoloji, güvenilirlik, yavaş ama sağlam ilerleme.",
+    reversed:"Katılık, değişime direnç, durgunluk.",
+    karmic:"Güvenilirlik ve esneklik dengesi."
+  },
+  "Kraliçe Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Pratik zeka, bolluk, besleyici güç, doğayla uyum.",
+    reversed:"Maddi kaygı, aşırı pratiklik, ruhsallığı ihmal.",
+    karmic:"Madde ve ruhun birliği."
+  },
+  "Kral Pentaküller": {
+    arcana:"minor", suit:"Pentaküller", element:"Toprak",
+    upright:"Maddi otorite, güvenli liderlik, uzun vadeli vizyon.",
+    reversed:"Maddi takıntı, iş hayatında tükenme.",
+    karmic:"Güvenlik ile yaşam dengesini kurmak."
+  },
+};
+
+// ── SYSTEM PROMPT ─────────────────────────────────────────
+
+const GATE_PASS = 'yildiz'; // şifreyi burdan değiştir
 
 function checkGate(){
   const val = document.getElementById('gateInput').value.trim().toLowerCase();
