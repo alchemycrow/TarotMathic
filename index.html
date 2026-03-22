@@ -644,7 +644,7 @@ async function getInterpretation(){
     const res=await fetch(WORKER_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]})
+      body:JSON.stringify({auth:localStorage.getItem('tarot_auth')||'',system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]})
     });
     const data=await res.json();
     const text=data.content&&data.content[0]&&data.content[0].text;
@@ -1201,26 +1201,43 @@ const CARD_DB = {
 
 // ── SYSTEM PROMPT ─────────────────────────────────────────
 
-const GATE_PASS = 'yildiz'; // şifreyi burdan değiştir
+const GATE_PASS = ''; // şifre Worker'da saklanıyor
 
-function checkGate(){
+async function checkGate(){
   const val = document.getElementById('gateInput').value.trim().toLowerCase();
-  if(val === GATE_PASS){
-    document.getElementById('gate').style.opacity='0';
-    document.getElementById('gate').style.transition='opacity 0.6s';
-    setTimeout(()=>document.getElementById('gate').style.display='none', 600);
-    localStorage.setItem('tarot_auth','1');
-  } else {
+  const btn = document.querySelector('#gate button');
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({auth: val, messages:[{role:'user',content:'ping'}], system:'ping'})
+    });
+    if(res.status === 200) {
+      localStorage.setItem('tarot_auth', val);
+      document.getElementById('gate').style.opacity='0';
+      document.getElementById('gate').style.transition='opacity 0.6s';
+      setTimeout(()=>document.getElementById('gate').style.display='none', 600);
+    } else {
+      const err=document.getElementById('gateErr');
+      err.textContent='Yanlış kod — tekrar dene';
+      err.style.opacity='1';
+      setTimeout(()=>err.style.opacity='0',2500);
+      document.getElementById('gateInput').value='';
+    }
+  } catch(e) {
     const err=document.getElementById('gateErr');
-    err.textContent='Yanlış kod — tekrar dene';
+    err.textContent='Bağlantı hatası';
     err.style.opacity='1';
     setTimeout(()=>err.style.opacity='0',2500);
-    document.getElementById('gateInput').value='';
   }
+  btn.textContent='Gir ↯';
+  btn.disabled=false;
 }
 
 // Auto-pass if already authenticated
-if(localStorage.getItem('tarot_auth')==='1'){
+if(localStorage.getItem('tarot_auth')){
   document.getElementById('gate').style.display='none';
 }
 
