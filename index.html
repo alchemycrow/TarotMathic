@@ -208,6 +208,61 @@ footer{
   letter-spacing:0.2em;color:var(--fog);
 }
 
+/* Cosmic Status Bar */
+.cosmic-status{
+  display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+  padding:1rem;margin:1.5rem 0;
+  background:linear-gradient(135deg, var(--ink2) 0%, var(--ink3) 100%);
+  border:0.5px solid var(--rim2);border-radius:12px;
+}
+.cosmic-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;background:var(--ink);
+  border:0.5px solid var(--rim);border-radius:8px;
+  transition:all 0.2s;
+}
+.cosmic-item:hover{border-color:var(--gold);transform:translateY(-1px);}
+.heat-toggle{cursor:pointer;}
+.cosmic-icon{font-size:20px;}
+.cosmic-text{display:flex;flex-direction:column;}
+.cosmic-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.1em;color:var(--fog);text-transform:uppercase;}
+.cosmic-value{font-size:12px;color:var(--paper);font-weight:500;}
+
+/* Heat Map Modal */
+.heat-modal{
+  position:fixed;inset:0;background:rgba(10,8,18,0.92);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;backdrop-filter:blur(4px);
+}
+.heat-content{
+  background:var(--ink);border:1px solid var(--rim2);
+  border-radius:16px;padding:1.5rem;
+  max-width:400px;width:90%;max-height:80vh;overflow-y:auto;
+}
+.heat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.heat-header h3{font-family:'Cinzel',serif;font-size:16px;letter-spacing:0.1em;color:var(--gold);margin:0;}
+.heat-close{background:none;border:none;color:var(--fog);font-size:20px;cursor:pointer;padding:4px 8px;}
+.heat-close:hover{color:var(--paper);}
+.heat-section{margin-bottom:1.2rem;}
+.heat-section h4{font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;color:var(--mist);margin-bottom:8px;text-transform:uppercase;}
+.heat-list{display:flex;flex-direction:column;gap:6px;}
+.heat-card{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;background:var(--ink2);
+  border:0.5px solid var(--rim);border-radius:6px;
+}
+.heat-card-name{font-size:13px;color:var(--paper);}
+.heat-card-count{font-size:12px;color:var(--gold);font-weight:500;}
+.heat-stat{font-size:13px;color:var(--paper2);line-height:1.6;}
+.btn-reset-heat{
+  width:100%;padding:10px;margin-top:1rem;
+  background:transparent;border:1px solid var(--fog);
+  border-radius:8px;color:var(--fog);
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.1em;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-reset-heat:hover{border-color:#c47f6f;color:#c47f6f;}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--ink);}
@@ -220,1267 +275,288 @@ footer{
   .snav-btn{font-size:9px;padding:7px 11px;}
   .spread-info{flex-wrap:wrap;gap:8px;}
   h1{font-size:1.5rem;}
-}
-</style>
-</head>
-<body>
-
-<canvas id="starCanvas"></canvas>
-
-<!-- Gate -->
-<div id="gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--ink);z-index:100;display:flex;align-items:center;justify-content:center;">
-  <div style="text-align:center;padding:2rem;">
-    <div style="font-family:Cinzel,serif;font-size:1.4rem;letter-spacing:0.3em;color:var(--gold);margin-bottom:0.5rem;">✦</div>
-    <div style="font-family:Cinzel,serif;font-size:0.8rem;letter-spacing:0.25em;color:var(--fog);text-transform:uppercase;margin-bottom:2rem;">Matematik Tarotu</div>
-    <input id="gateInput" type="password" placeholder="giriş kodu" autocomplete="off"
-      style="display:block;width:220px;margin:0 auto 1rem;padding:12px 16px;background:var(--ink2);border:0.5px solid var(--rim2);border-radius:6px;color:var(--paper);font-family:Cinzel,serif;font-size:13px;letter-spacing:0.15em;text-align:center;outline:none;"
-      onkeydown="if(event.key==='Enter')checkGate()">
-    <button onclick="checkGate()"
-      style="font-family:Cinzel,serif;font-size:11px;letter-spacing:0.2em;padding:10px 28px;background:transparent;border:0.5px solid var(--gold);border-radius:6px;color:var(--gold);cursor:pointer;">
-      Gir ↯
-    </button>
-    <div id="gateErr" style="margin-top:1rem;font-size:12px;color:var(--rose);font-style:italic;opacity:0;transition:opacity 0.3s;"></div>
-  </div>
-</div>
-
-<div class="wrap">
-
-<!-- Header -->
-<header>
-  <div class="sigil">✦ ◎ ✦</div>
-  <h1>MATEMATİK TAROTU</h1>
-  <div class="tagline">Sekiz Fonksiyon · Yetmiş Sekiz Kart · Sonsuz Yol</div>
-</header>
-
-<!-- Spread nav -->
-<nav class="spread-nav" id="spreadNav"></nav>
-
-<!-- Engine -->
-<div class="engine">
-  <div class="eng"><div class="eng-t">λ Lyapunov</div><canvas class="mini" id="c0"></canvas><div class="eng-v" id="v0">—</div></div>
-  <div class="eng"><div class="eng-t">M Renorm.</div><canvas class="mini" id="c1"></canvas><div class="eng-v" id="v1">—</div></div>
-  <div class="eng"><div class="eng-t">F Free En.</div><canvas class="mini" id="c2"></canvas><div class="eng-v" id="v2">—</div></div>
-  <div class="eng"><div class="eng-t">Φ Int.Info</div><canvas class="mini" id="c3"></canvas><div class="eng-v" id="v3">—</div></div>
-  <div class="eng"><div class="eng-t">Lorenz z</div><canvas class="mini" id="c4"></canvas><div class="eng-v" id="v4">—</div></div>
-  <div class="eng"><div class="eng-t">Kuramoto</div><canvas class="mini" id="c5"></canvas><div class="eng-v" id="v5">—</div></div>
-  <div class="eng"><div class="eng-t">Felaket</div><canvas class="mini" id="c6"></canvas><div class="eng-v" id="v6">—</div></div>
-  <div class="eng"><div class="eng-t">Kum Çığı</div><canvas class="mini" id="c7"></canvas><div class="eng-v" id="v7">—</div></div>
-</div>
-
-<!-- Spread info bar -->
-<div class="spread-info">
-  <div class="spread-dot" id="spreadDot"></div>
-  <div class="spread-meta">
-    <div class="spread-name-big" id="spreadNameBig">—</div>
-    <div class="spread-desc-small" id="spreadDescSmall">—</div>
-  </div>
-  <div class="next-info">
-    <div class="next-pos-label" id="nextPosLabel">Sıradaki</div>
-    <div class="next-pos-name" id="nextPosName">—</div>
-    <div class="deck-rem" id="deckRem">78 kart</div>
-  </div>
-</div>
-
-<!-- Controls -->
-<div class="controls">
-  <button class="btn-draw" onclick="drawCard()">Kart Çek ↯</button>
-  <button class="btn-sm" id="pauseBtn" onclick="togglePause()">⏸ Durdur</button>
-  <button class="btn-sm" onclick="clearSpread()">Yeni Açılım</button>
-  <div class="prog" id="prog">0 / 0</div>
-</div>
-
-<!-- Cards -->
-<div class="spread-area" id="spreadArea">
-  <div class="empty-hint">Bir açılım seç — motor hazır</div>
-</div>
-
-<!-- Result -->
-<div class="result-panel" id="resultPanel">
-  <div class="result-hdr">Açılım Tamamlandı</div>
-  <ul class="result-list" id="resultList"></ul>
-  <button class="copy-btn" id="interpBtn" onclick="getInterpretation()">Yorumu Al ✦</button>
-  <div class="copy-ok" id="copyOk"></div>
-  <div class="interp-panel" id="interpPanel">
-    <div class="interp-hdr">Karmik Yorum</div>
-    <div id="interpContent"></div>
-  </div>
-</div>
-
-<!-- About -->
-<div class="about">
-  <h2>Motor Hakkında</h2>
-  <div class="about-grid">
-    <div class="about-card">
-      <h3>Sekiz Fonksiyon</h3>
-      <p>Her kart çekiminde sekiz matematiksel sistem eş zamanlı çalışır. Hangi arcananın, hangi suitin, düz mü ters mi geleceği, hangi numaranın seçileceği — hepsi bu fonksiyonların o anki kesişim noktasından doğar.</p>
-    </div>
-    <div class="about-card">
-      <h3>Pozisyon Profilleri</h3>
-      <p>Her açılım pozisyonunun kendi ağırlık matrisi vardır. "Engelleyen" pozisyonu Kılıçlar yönünde eğilir, felaket eşiği daha hassastır. "Sana Mesaj" kartı net gelir, ters dönmek için daha fazla baskı gerekir.</p>
-    </div>
-    <div class="about-card">
-      <h3>78 Kartlık Deste</h3>
-      <p>Çekilen kart desteden çıkar, bir daha seçilemez. Açılım boyunca kaç kart kaldığı görünür. Yeni açılımda deste yeniden karılır.</p>
-    </div>
-    <div class="about-card">
-      <h3>Yorum</h3>
-      <p>"Claude'a Gönder" ile açılımın tam prompt'u panoya kopyalanır. Claude'a yapıştırınca karmik, ruhsal, witch tonunda minimum 500 kelime yorum gelir.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Books -->
-<div class="books">
-  <h2>Referans Kitaplar</h2>
-  <div class="book-list">
-    <div class="book">
-      <div class="book-title">Seventy-Eight Degrees of Wisdom</div>
-      <div class="book-author">Rachel Pollack</div>
-      <div class="book-note">Tarot literatürünün temel taşı. Her kartın psikolojik ve karmik derinliği için birincil referans.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">The Modern Witchcraft Book of Tarot</div>
-      <div class="book-author">Skye Alexander</div>
-      <div class="book-note">Pratik okuma teknikleri, aşk ve ilişki yorumları. Cadılık geleneği ile tarotun buluşma noktası.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">The Way of Tarot</div>
-      <div class="book-author">Alejandro Jodorowsky</div>
-      <div class="book-note">Kartların birbiriyle konuşmasını okumak için. Açılım içi dinamikler ve sembolik derinlik.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">The Symbolism of the Tarot</div>
-      <div class="book-author">P.D. Ouspensky</div>
-      <div class="book-note">Felsefi ve sembolik katman. Her kartın evrensel arketip içindeki yeri.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">Tarot for Your Self</div>
-      <div class="book-author">Mary K. Greer</div>
-      <div class="book-note">Karmik okuma, shadow work ve kişisel dönüşüm için. Kartları "sen kim olabilirsin" sorusundan yorumlar.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">Past-Life & Karmic Tarot</div>
-      <div class="book-author">Edain McCoy</div>
-      <div class="book-note">Geçmiş yaşam izleri ve karmik örüntüler. Ruhun yolculuğunu kartlarla okumak için.</div>
-    </div>
-  </div>
-</div>
-
-<footer>✦ Matematik Tarotu · Her açılım eşsizdir ✦</footer>
-
-</div><!-- /wrap -->
-
-<script>
-// ── STARS ─────────────────────────────────────────────────
-(function(){
-  const c=document.getElementById('starCanvas');
-  function r(){c.width=innerWidth;c.height=innerHeight;}
-  r();addEventListener('resize',r);
-  const ctx=c.getContext('2d');
-  const stars=Array.from({length:200},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.1+0.2,a:Math.random(),sp:Math.random()*0.0004+0.0001}));
-  (function draw(){
-    ctx.clearRect(0,0,c.width,c.height);
-    stars.forEach(s=>{s.a+=s.sp;ctx.beginPath();ctx.arc(s.x*c.width,s.y*c.height,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,195,228,${0.15+Math.sin(s.a)*0.25})`;ctx.fill();});
-    requestAnimationFrame(draw);
-  })();
-})();
-
-// ── SPREADS DEFINITION ────────────────────────────────────
-const SPREADS = {
-  iliski: {
-    id:'iliski',name:'İlişki Yansıması',desc:'İlişki · Gelecek Yönü · Karmik Okuma',color:'#c87898',
-    tone:'ilişki · gelecek yönü · karmik okuma',
-    positions:[
-      {num:'I',  name:'Sen',           desc:'şu anki enerji',      color:'#5b8fc9',λ:0.40, M:0,    F:0.12,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Partner',       desc:'onların enerjisi',     color:'#c47f6f',λ:0.40, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.30,Cat:0.10},
-      {num:'III',name:'İlişkinin Özü', desc:'temel bağ',            color:'#5aaa90',λ:0.20, M:0.30, F:0.15,Φ:0.55,Lz:0.45,Kr:0.40,Cat:0.00},
-      {num:'IV', name:'Engelleyen',    desc:'zorluk ve kök',        color:'#c49a50',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'V',  name:'Sana Mesaj',    desc:'kartların tavsiyesi',  color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
-      {num:'VI', name:'Karma Dersi',   desc:'ruhsal öğreti',        color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'VII',name:'Senaryo A',     desc:'seçim yapılırsa',      color:'#7aaa50',λ:0.50, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
-      {num:'VIII',name:'Senaryo B',    desc:'bekleyiş sürerse',     color:'#c86888',λ:0.50, M:-0.20,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
-    ]
-  },
-  tekkisi: {
-    id:'tekkisi',name:'Tek Kişi',desc:'Bireysel · İçsel Yolculuk',color:'#98b4d0',
-    tone:'bireysel içsel yolculuk · karmik okuma',
-    positions:[
-      {num:'I',  name:'Şu Anki Ben',  desc:'mevcut enerji',       color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.75,Lz:0.25,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Güç',          desc:'taşıdığın ateş',      color:'#c49a50',λ:0.35, M:0.15, F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'III',name:'Gölge',        desc:'görülmeyi bekleyen',  color:'#6858a8',λ:0.50, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.40},
-      {num:'IV', name:'Mesaj',        desc:'evrenin sesi',        color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.85,Lz:0.15,Kr:0.10,Cat:0.00},
-      {num:'V',  name:'Yön',          desc:'önündeki yol',        color:'#7aaa50',λ:0.45, M:0,    F:0.12,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
-    ]
-  },
-  karar: {
-    id:'karar',name:'Karar Anı',desc:'Seçim · İki Yol · Sonuç',color:'#c8a448',
-    tone:'karar anı · iki yol analizi',
-    positions:[
-      {num:'I',  name:'Sen Şu An',    desc:'iç dünya',             color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Yol A',        desc:'birinci seçenek',      color:'#7aaa50',λ:0.50, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
-      {num:'III',name:'Yol B',        desc:'ikinci seçenek',       color:'#c87898',λ:0.50, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
-      {num:'IV', name:'Gizli Etki',   desc:'görünmeyenin sesi',    color:'#6858a8',λ:0.15, M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
-      {num:'V',  name:'Karma Mesajı', desc:'ruhun yönlendirmesi',  color:'#9878c8',λ:0.10, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.10},
-      {num:'VI', name:'Sonuç',        desc:'seçim yapılırsa',      color:'#c8a448',λ:0.45, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
-    ]
-  },
-  ay: {
-    id:'ay',name:'Ay Açılımı',desc:'Döngü · Dönüşüm · Niyet',color:'#a098c8',
-    tone:'ay döngüsü · dönüşüm · niyet',
-    positions:[
-      {num:'I',  name:'Döngü',        desc:'tekrar eden örüntü',   color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'II', name:'Bırakılan',    desc:'salıverilmesi gereken',color:'#c87898',λ:0.45, M:-0.10,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.45},
-      {num:'III',name:'Kazanılan',    desc:'yeni gelen enerji',    color:'#7aaa50',λ:0.40, M:0.10, F:0.16,Φ:0.70,Lz:0.30,Kr:0.15,Cat:0.00},
-      {num:'IV', name:'Gizlenen',     desc:'karanlıktaki güç',     color:'#5aaa90',λ:0.20, M:0,    F:0.10,Φ:0.55,Lz:0.45,Kr:0.20,Cat:0.30},
-      {num:'V',  name:'Destek',       desc:'yanındaki enerji',     color:'#98b4d0',λ:0.45, M:0.15, F:0.14,Φ:0.65,Lz:0.35,Kr:0.30,Cat:0.00},
-      {num:'VI', name:'Engel',        desc:'aşılması gereken',     color:'#c49a50',λ:0.45, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.50},
-      {num:'VII',name:'Niyet',        desc:'ay niyeti',            color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
-    ]
-  },
-  yasam: {
-    id:'yasam',name:'Genel Yaşam',desc:'İş · İlişki · Sağlık · Ruh · Yön',color:'#70a882',
-    tone:'genel yaşam okuma · tüm alanlar',
-    positions:[
-      {num:'I',  name:'Şu An',        desc:'genel enerji',         color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'İş & Kariyer', desc:'emek ve yaratım',      color:'#c49a50',λ:0.50, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.10,Cat:0.20},
-      {num:'III',name:'İlişkiler',    desc:'bağlar ve sevgi',      color:'#c87898',λ:0.45, M:0.25, F:0.12,Φ:0.60,Lz:0.40,Kr:0.35,Cat:0.10},
-      {num:'IV', name:'Sağlık',       desc:'beden ve enerji',      color:'#7aaa50',λ:0.50, M:0.10, F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.15},
-      {num:'V',  name:'Ruh & İçsel',  desc:'spiritüel yol',        color:'#9878c8',λ:0.10, M:0,    F:0.16,Φ:0.75,Lz:0.25,Kr:0.15,Cat:0.10},
-      {num:'VI', name:'Engel',        desc:'sizi durduran',        color:'#c47f6f',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'VII',name:'Güç',          desc:'kullanılmayan potansiyel',color:'#5b8fc9',λ:0.35,M:0,  F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'VIII',name:'Karma',       desc:'ruhsal öğreti',        color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'IX', name:'Yön',          desc:'önündeki 3 ay',        color:'#70a882',λ:0.45, M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.15},
-    ]
-  },
-  gelecek: {
-    id:'gelecek',name:'Gelecek Yolu',desc:'Zaman · Olasılık · Kader',color:'#c8a448',
-    tone:'gelecek yolu · zaman açılımı · karmik olasılık',
-    positions:[
-      {num:'I',  name:'Şu An',          desc:'mevcut enerji',               color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Yakın Gelecek',  desc:'önümüzdeki haftalarda',       color:'#7aaa50',λ:0.50, M:0,    F:0.13,Φ:0.68,Lz:0.32,Kr:0.12,Cat:0.10},
-      {num:'III',name:'Uzak Gelecek',   desc:'önümüzdeki aylarda',          color:'#c8a448',λ:0.50, M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
-      {num:'IV', name:'Gizli Etki',     desc:'görünmeyenin şekillendirdiği',color:'#6858a8',λ:0.15, M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
-      {num:'V',  name:'Sana Bağlı',     desc:'senin yaratabileceğin',       color:'#9878c8',λ:0.35, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
-      {num:'VI', name:'Kader Akışı',    desc:'değişmesi zor olan',          color:'#c87898',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.25},
-      {num:'VII',name:'Engelleyen',     desc:'dikkate alınması gereken',    color:'#c47f6f',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'VIII',name:'Senaryo A',     desc:'en olası yol',                color:'#70a882',λ:0.55, M:0.15, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
-      {num:'IX', name:'Senaryo B',      desc:'alternatif yol',              color:'#c49a50',λ:0.55, M:-0.15,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
-      {num:'X',  name:'Sonuç',          desc:'her iki yolun ortak noktası', color:'#c8a448',λ:0.25, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
-    ]
-  }
-};
-
-// ── CARD DATA ─────────────────────────────────────────────
-const MAJOR=[
-  {n:"Deli",s:"✦"},{n:"Büyücü",s:"✧"},{n:"Yüksek Rahibe",s:"☽"},
-  {n:"İmparatoriçe",s:"♀"},{n:"İmparator",s:"♁"},{n:"Başrahip",s:"⊕"},
-  {n:"Aşıklar",s:"♡"},{n:"Savaş Arabası",s:"⊛"},{n:"Güç",s:"∞"},
-  {n:"Ermiş",s:"◎"},{n:"Kader Çarkı",s:"⊙"},{n:"Adalet",s:"⚖"},
-  {n:"Asılı Adam",s:"⊗"},{n:"Ölüm",s:"⊘"},{n:"Denge",s:"≈"},
-  {n:"Şeytan",s:"⊖"},{n:"Kule",s:"⊟"},{n:"Yıldız",s:"★"},
-  {n:"Ay",s:"☾"},{n:"Güneş",s:"☀"},{n:"Yargı",s:"♪"},{n:"Dünya",s:"◉"}
-];
-const SUITS=[
-  {name:"Değnekler",icon:"🔥"},{name:"Kupalar",icon:"💧"},
-  {name:"Kılıçlar",icon:"💨"},{name:"Pentaküller",icon:"🌿"}
-];
-const PIPS=["As","İki","Üç","Dört","Beş","Altı","Yedi","Sekiz","Dokuz","On","Paж","Şövalye","Kraliçe","Kral"];
-const DECK=[];
-MAJOR.forEach((m,i)=>DECK.push({id:i,n:m.n,s:m.s,a:"Büyük Arcana",major:true}));
-SUITS.forEach((suit,si)=>PIPS.forEach((p,pi)=>DECK.push({id:22+si*14+pi,n:`${p} ${suit.name}`,s:suit.icon,a:"Küçük Arcana",major:false})));
-
-// ── ENGINE ────────────────────────────────────────────────
-const N=60;let running=true,tick=0;
-let lyR=3.72,lyX=0.5,lyX2=0.501,lySum=0,lyCount=0,lyLambda=0;
-let lyBuf=Array(N).fill(0.5),lyBuf2=Array(N).fill(0.5);
-const RG=18;let rgGrid=[],rgT=2.3;
-function rgInit(){rgGrid=Array.from({length:RG},()=>Array.from({length:RG},()=>Math.random()<0.5?1:-1));}
-function rgStep(){for(let k=0;k<RG*RG/2;k++){const i=Math.floor(Math.random()*RG),j=Math.floor(Math.random()*RG);const nb=[rgGrid[(i-1+RG)%RG][j],rgGrid[(i+1)%RG][j],rgGrid[i][(j-1+RG)%RG],rgGrid[i][(j+1)%RG]];const dE=2*rgGrid[i][j]*nb.reduce((a,b)=>a+b,0);if(dE<0||Math.random()<Math.exp(-dE/rgT))rgGrid[i][j]*=-1;}}
-function rgMag(){return rgGrid.flat().reduce((a,b)=>a+b,0)/(RG*RG);}
-let feStep=0,feFreq=0.09,fePhase=0,feF=0,feW=Array(N).fill(0),feB=Array(N).fill(0);
-function feStepFn(){feStep++;const v=Math.sin(feStep*feFreq+fePhase)+(Math.random()-0.5)*0.18;feW.shift();feW.push(v);const pe=v-feB[N-1];feF=pe*pe;feB.shift();feB.push(feB[feB.length-1]+0.09*pe);}
-let phiE=new Set(["0-1","1-2","2-3","3-4","4-0","0-2","1-3"]);
-const PHI_ALL=[[0,1],[1,2],[2,3],[3,4],[4,0],[0,2],[1,3],[2,4],[3,0],[4,1]];
-function pk(a,b){return `${Math.min(a,b)}-${Math.max(a,b)}`;}
-function phiVal(){let c=0;PHI_ALL.forEach(([a,b])=>{if(phiE.has(pk(a,b)))c++;});const d=c/PHI_ALL.length;let sp=0;for(let s=1;s<5;s++){let cr=0;for(let ai=0;ai<s;ai++)for(let bi=0;bi<5-s;bi++)if(phiE.has(pk(ai,s+bi)))cr++;sp=Math.max(sp,cr/(s*(5-s)*2+0.01));}return d*sp*5;}
-let lx=1,ly=0.5,lz=14,lorBuf=Array(N).fill(14);
-function lorStep(){const s=10,r=28,b=2.667,dt=0.008;lx+=s*(ly-lx)*dt;ly+=(lx*(r-lz)-ly)*dt;lz+=(lx*ly-b*lz)*dt;lorBuf.shift();lorBuf.push(lz);}
-const KN=7;let kP=[],kF=[],kK=1.2,kR=0;
-function kInit(){kP=Array.from({length:KN},()=>Math.random()*Math.PI*2);kF=Array.from({length:KN},()=>(Math.random()-0.5)*1.5);}
-function kStep(){const dt=0.06,np=[...kP];for(let i=0;i<KN;i++){let c=0;for(let j=0;j<KN;j++)c+=Math.sin(kP[j]-kP[i]);np[i]=kP[i]+(kF[i]+kK/KN*c)*dt;}kP=np;let rx=0,ry=0;kP.forEach(p=>{rx+=Math.cos(p);ry+=Math.sin(p);});kR=Math.sqrt(rx*rx+ry*ry)/KN;}
-let catU=-0.5,catV=0.1;
-function catStep(){catU+=(Math.random()-0.5)*0.02;catU=Math.max(-2,Math.min(1,catU));catV+=(Math.random()-0.5)*0.015;catV=Math.max(-1.5,Math.min(1.5,catV));}
-function catDW(){return catU<-0.1;}
-const SP=20;let spG=[],spAv=Array(N).fill(0);
-function spInit(){spG=Array.from({length:SP},()=>Array(SP).fill(0));}
-function spStep(){spG[Math.floor(SP/2)][Math.floor(SP/2)]++;let ch=true,st=0;while(ch&&st<200){ch=false;st++;for(let i=0;i<SP;i++)for(let j=0;j<SP;j++){if(spG[i][j]>=4){spG[i][j]-=4;ch=true;if(i>0)spG[i-1][j]++;if(i<SP-1)spG[i+1][j]++;if(j>0)spG[i][j-1]++;if(j<SP-1)spG[i][j+1]++;}}}spAv.shift();spAv.push(Math.min(st,50));}
-
-// ── STATE ─────────────────────────────────────────────────
-let activeSpreadId='iliski';
-let SPREAD=[];
-let usedIds=new Set();
-
-function setSpread(id){
-  activeSpreadId=id;
-  clearSpread();
-  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
-  const S=SPREADS[id];
-  document.getElementById('spreadDot').style.background=S.color;
-  document.getElementById('spreadNameBig').textContent=S.name;
-  document.getElementById('spreadDescSmall').textContent=S.desc;
-  updateNext();
+  .mode-toggle{flex-direction:column;}
+  .manual-input-row{flex-direction:column;gap:8px;}
+  .card-select{width:100%;}
 }
 
-function updateNext(){
-  const S=SPREADS[activeSpreadId];
-  const i=SPREAD.length;
-  const total=S.positions.length;
-  document.getElementById('prog').textContent=i+' / '+total;
-  document.getElementById('deckRem').textContent=(78-usedIds.size)+' kart';
-  if(i>=total){
-    document.getElementById('nextPosLabel').textContent='Tamamlandı';
-    document.getElementById('nextPosName').textContent='—';
-    return;
-  }
-  const P=S.positions[i];
-  document.getElementById('nextPosLabel').textContent='Sıradaki';
-  document.getElementById('nextPosName').textContent=`${P.num} · ${P.name}`;
-  document.getElementById('nextPosName').style.color=P.color;
-}
-
-// ── DECK & MAPPING ────────────────────────────────────────
-function findCard(targetId,isMajor){
-  const pool=DECK.filter(c=>c.major===isMajor&&!usedIds.has(c.id));
-  if(!pool.length){const any=DECK.filter(c=>!usedIds.has(c.id));return any.length?any[0]:null;}
-  // En yakın kart yerine: hedef etrafında küçük bir pencereden rastgele seç
-  const window=pool.filter(c=>Math.abs(c.id-targetId)<=3);
-  const candidates=window.length>=2?window:pool.slice(0,Math.min(5,pool.length));
-  return candidates[Math.floor(Math.random()*candidates.length)];
-}
-
-function mapCard(P){
-  const lambda=lyLambda,mag=rgMag()+P.M,phi=phiVal(),lzN=(lz-10)/30,r=kR,dw=catDW();
-
-  // Zaman damgası — kullanıcının bastığı tek o an, tekrar edilemez
-  const t=Date.now();
-  const tFine=(t%10000)/10000;       // 0-1, milisaniye hassasiyeti
-  const tCoarse=(t%100000)/100000;   // 0-1, daha yavaş döngü
-
-  // Major/Minor: Lyapunov
-  const isMajor=lambda>P.λ;
-
-  // Ters/Düz: FreeEnergy + Catastrophe + Kuramoto — Math.random() yok
-  const reversed=(feF>P.F)||(dw&&tFine<P.Cat)||(r<0.3&&tCoarse<P.Kr);
-
-  // X FACTOR — Kuramoto eşik geçişi
-  const kuraX = r>0.8 ? (r-0.8)*2.5 : r*0.2;
-
-  // X FACTOR — Felaket çift kuyu
-  const catX = catU < -0.5 ? Math.abs(catU+0.5)*0.8 : (catU+2)/4*0.15;
-
-  // X FACTOR — Kum yığını çığ
-  const sandX = spAv[N-1]>20 ? (spAv[N-1]-20)/30 : spAv[N-1]/50*0.15;
-
-  // Suit: RG + Lorenz + Kuramoto(X) + lyX + Sand(X) + zaman damgası
-  const suitRaw=(
-    (mag+1)*0.25+
-    lzN*0.20+
-    kuraX*0.22+
-    lyX*0.13+
-    sandX*0.10+
-    tFine*0.10     // zaman damgası katkısı
-  );
-  const suitNorm=Math.min(1,Math.max(0,suitRaw/1.3));
-  const si=Math.min(3,Math.max(0,Math.floor(suitNorm*4)));
-
-  // Kart numarası: Φ + Lorenz + Kuramoto(X) + Cat(X) + Sand(X) + zaman
-  const timeShift=isMajor?(tFine-0.5)*0.25:0; // Major için zaman damgası kayması
-  const nPhi=Math.min(1,Math.max(0,phi/3));
-  const nIdx=Math.min(1,Math.max(0,
-    nPhi*P.Φ+
-    lzN*P.Lz*0.25+
-    kuraX*P.Kr*0.28+
-    catX*0.18+
-    sandX*0.13+
-    (lyX-0.3)*0.10+
-    tCoarse*0.06+  // yavaş zaman döngüsü katkısı
-    timeShift      // Major için anlık zaman damgası
-  ));
-
-  const tid=isMajor?Math.floor(nIdx*22):22+si*14+Math.floor(nIdx*14);
-  const dc=findCard(tid,isMajor);
-  if(!dc)return null;
-  usedIds.add(dc.id);
-  return {name:dc.n,icon:dc.s,arcana:dc.a,reversed,P};
-}
-
-function drawCard(){
-  const S=SPREADS[activeSpreadId];
-  if(SPREAD.length>=S.positions.length)return;
-  const P=S.positions[SPREAD.length];
-  const card=mapCard(P);
-  if(!card)return;
-  SPREAD.push(card);
-  renderSpread();updateNext();
-  if(SPREAD.length===S.positions.length)setTimeout(showResult,600);
-}
-
-function renderSpread(){
-  const area=document.getElementById('spreadArea');
-  if(!SPREAD.length){area.innerHTML='<div class="empty-hint">Motor hazır — istediğin an çek</div>';return;}
-  area.innerHTML='';
-  SPREAD.forEach((c)=>{
-    const P=c.P;
-    const wrap=document.createElement('div');wrap.className='card-wrap';
-    const lbl=document.createElement('div');lbl.className='card-pos-lbl';
-    lbl.textContent=`${P.num}·${P.name}`;lbl.style.color=P.color;
-    const card=document.createElement('div');
-    card.className='tcard'+(c.reversed?' rev':'');
-    card.style.borderColor=P.color+'44';
-    card.innerHTML=`<div class="tc-arc">${c.arcana}</div><div class="tc-glyph">${c.icon}</div><div class="tc-name">${c.name}</div>${c.reversed?'<div class="tc-rev">ters</div>':''}`;
-    const orb=document.createElement('div');orb.className='card-orb';orb.style.background=P.color;
-    wrap.append(lbl,card,orb);area.appendChild(wrap);
-  });
-}
-
-function showResult(){
-  const panel=document.getElementById('resultPanel');
-  panel.style.display='block';
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-  const S=SPREADS[activeSpreadId];
-  const list=document.getElementById('resultList');
-  list.innerHTML='';
-  SPREAD.forEach((c,i)=>{
-    const P=S.positions[i];
-    const li=document.createElement('li');
-    li.innerHTML=`<span class="rl-pos">${P.num} · ${P.name}</span><span class="rl-card">${c.name}${c.reversed?'<span class="rl-rev"> (ters)</span>':''}</span>`;
-    list.appendChild(li);
-  });
-}
-
-const WORKER_URL='https://tarot-proxy.cevikgun.workers.dev';
-
-function buildPrompt(){
-  const S=SPREADS[activeSpreadId];
-  const list=SPREAD.map((c,i)=>`${S.positions[i].num} · ${S.positions[i].name}: ${c.name}${c.reversed?' (ters)':''}`).join('\n');
-  return `Bu matematik-tarot açılımını yorumla (${S.tone}):\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
-}
-
-async function getInterpretation(){
-  const btn=document.getElementById('interpBtn');
-  const panel=document.getElementById('interpPanel');
-  const cont=document.getElementById('interpContent');
-  btn.disabled=true;
-  btn.textContent='Yorum geliyor...';
-  panel.style.display='block';
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-  cont.innerHTML='<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
-
-  const S=SPREADS[activeSpreadId];
-  const cardContext=SPREAD.map((c,i)=>{
-    const P=S.positions[i];
-    const k=CARD_DB[c.name];
-    let info=`${P.num} · ${P.name}: ${c.name}${c.reversed?' (TERS)':''}`;
-    if(k){
-      const meaning=c.reversed?k.reversed:k.upright;
-      info+=`\n  Anlam: ${meaning}`;
-      info+=`\n  Karmik katman: ${k.karmic}`;
-    }
-    return info;
-  }).join('\n\n');
-
-  const extra=S.id==='iliski'||S.id==='karar'?'Senaryo kartları için ayrı karmik yol analizi. ':'';
-  const userMsg=`Açılım: ${S.name} (${S.tone})\n\n${cardContext}\n\nYukarıdaki kart bilgilerini içselleştirerek derin, karmik bir yorum yaz. Her pozisyon 2-3 cümle. ${extra}Sonda genel sentez. Minimum 500 kelime.`;
-
-  try{
-    const res=await fetch(WORKER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({auth:localStorage.getItem('tarot_auth')||'',system:SYSTEM_PROMPT,messages:[{role:'user',content:userMsg}]})
-    });
-    const data=await res.json();
-    const text=data.content&&data.content[0]&&data.content[0].text;
-    if(text){
-      const html=text
-        .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-        .replace(/^## (.+)$/gm,(m,p1)=>'<h2>'+p1+'</h2>')
-        .replace(/^### (.+)$/gm,(m,p1)=>'<h3>'+p1+'</h3>')
-        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g,'<em>$1</em>')
-        .replace(/^---+$/gm,'<hr style="border:none;border-top:0.5px solid var(--rim);margin:1rem 0;">')
-        .split('\n\n').map(p=>p.trim()?'<p>'+p.replace(/\n/g,' ')+'</p>':'').join('');
-      cont.innerHTML='<div class="interp-text">'+html+'</div>';
-    } else {
-      cont.innerHTML='<div class="interp-error">Hata: '+(data.error?.message||'Bilinmeyen')+'</div>';
-    }
-  } catch(e){
-    cont.innerHTML='<div class="interp-error">Bağlantı hatası: '+e.message+'</div>';
-  }
-  btn.disabled=false;
-  btn.textContent='Yeniden Al ✦';
-}
-
-
-function clearSpread(){
-  SPREAD=[];usedIds.clear();
-  renderSpread();updateNext();
-  document.getElementById('resultPanel').style.display='none';
-}
-
-function togglePause(){
-  running=!running;
-  document.getElementById('pauseBtn').textContent=running?'⏸ Durdur':'▶ Devam';
-  if(running)loop();
-}
-
-// ── BUILD NAV ─────────────────────────────────────────────
-(function(){
-  const nav=document.getElementById('spreadNav');
-  Object.values(SPREADS).forEach(S=>{
-    const btn=document.createElement('button');
-    btn.className='snav-btn'+(S.id==='iliski'?' active':'');
-    btn.dataset.id=S.id;
-    btn.textContent=`${S.name} · ${S.positions.length} kart`;
-    btn.style.setProperty('--c',S.color);
-    btn.onclick=()=>setSpread(S.id);
-    nav.appendChild(btn);
-  });
-  setSpread('iliski');
-})();
-
-// ── MINI RENDERS ──────────────────────────────────────────
-function mL(id,buf,col,buf2,col2){
-  const c=document.getElementById(id);if(!c)return;
-  const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;
-  if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;
-  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
-  const p=2,cw=W-p*2,ch=H-p*2;
-  const mn=Math.min(...buf),ran=Math.max(...buf)-mn||1;
-  const tx=i=>p+(i/(N-1))*cw,ty=v=>p+(1-(v-mn)/ran)*ch;
-  ctx.clearRect(0,0,W,H);
-  if(buf2){const mn2=Math.min(...buf2),ran2=Math.max(...buf2)-mn2||1;const ty2=v=>p+(1-(v-mn2)/ran2)*ch;ctx.fillStyle='rgba(100,80,180,0.05)';ctx.beginPath();buf.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));for(let i=N-1;i>=0;i--)ctx.lineTo(tx(i),ty2(buf2[i]));ctx.closePath();ctx.fill();ctx.beginPath();ctx.strokeStyle=col2;ctx.lineWidth=0.7;ctx.setLineDash([2,2]);buf2.forEach((v,i)=>i?ctx.lineTo(tx(i),ty2(v)):ctx.moveTo(tx(i),ty2(v)));ctx.stroke();ctx.setLineDash([]);}
-  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=1.2;buf.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));ctx.stroke();
-}
-function mRG(){const c=document.getElementById('c1');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cs=W/RG,ch2=H/RG;for(let i=0;i<RG;i++)for(let j=0;j<RG;j++){ctx.fillStyle=rgGrid[i][j]===1?'#182040':'#281828';ctx.fillRect(j*cs,i*ch2,cs,ch2);}}
-function mKr(){const c=document.getElementById('c5');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cx=W/2,cy=H/2,rad=Math.min(W,H)/2-3;ctx.clearRect(0,0,W,H);ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.5;ctx.stroke();kP.forEach((p,i)=>{const x=cx+rad*Math.cos(p),y=cy+rad*Math.sin(p);ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fillStyle=`hsl(${Math.round(i/KN*280+220)},40%,60%)`;ctx.fill();});let rx2=0,ry2=0;kP.forEach(p=>{rx2+=Math.cos(p);ry2+=Math.sin(p);});const psi=Math.atan2(ry2,rx2);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+rad*kR*Math.cos(psi),cy+rad*kR*Math.sin(psi));ctx.strokeStyle='#9878c8';ctx.lineWidth=1.2;ctx.stroke();}
-function mCat(){const c=document.getElementById('c6');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);const p2=2,cw=W-p2*2,ch2=H-p2*2;const vs=[];for(let i=0;i<=80;i++){const x=-3+i*0.075;vs.push(x*x*x*x/4+catU*x*x/2+catV*x);}const mn=Math.min(...vs),ran=Math.max(...vs)-mn||1;const tx=i=>p2+(i/80)*cw,ty=v=>p2+(1-(v-mn)/ran)*ch2;ctx.beginPath();ctx.strokeStyle='#9878c8';ctx.lineWidth=1.2;vs.forEach((v,i)=>i?ctx.lineTo(tx(i),ty(v)):ctx.moveTo(tx(i),ty(v)));ctx.stroke();const mi=vs.indexOf(Math.min(...vs));ctx.beginPath();ctx.arc(tx(mi),ty(vs[mi]),2.5,0,Math.PI*2);ctx.fillStyle=catDW()?'#c87898':'#7aaa50';ctx.fill();}
-function mSand(){const c=document.getElementById('c7');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const cs=W/SP,ch2=H/SP;const cols=['transparent','#101830','#182850','#2a4888','#5878c0'];for(let i=0;i<SP;i++)for(let j=0;j<SP;j++){const v=Math.min(4,spG[i][j]);if(v>0){ctx.fillStyle=cols[v];ctx.fillRect(j*cs,i*ch2,cs,ch2);}}}
-function mPhi(){const c=document.getElementById('c3');if(!c)return;const dpr=devicePixelRatio||1,W=c.offsetWidth,H=c.offsetHeight;if(!W||!H)return;c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);const phi=phiVal(),fill=Math.min(1,phi/3);ctx.clearRect(0,0,W,H);ctx.fillStyle='#141430';ctx.fillRect(0,H*(1-fill),W,H*fill);ctx.fillStyle='#8c89a8';ctx.font='10px Cinzel,serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(phi.toFixed(2),W/2,H/2);}
-
-// ── LOOP ──────────────────────────────────────────────────
-function loop(){
-  tick++;
-  lySum+=Math.log(Math.abs(lyR*(1-2*lyX)));lyCount++;lyLambda=lySum/lyCount;
-  lyX=lyR*lyX*(1-lyX);lyX2=lyR*lyX2*(1-lyX2);
-  lyBuf.shift();lyBuf.push(lyX);lyBuf2.shift();lyBuf2.push(lyX2);
-  if(tick%140===0){lyR+=(Math.random()-0.5)*0.1;lyR=Math.min(4,Math.max(2.5,lyR));lySum=0;lyCount=0;}
-  rgStep();if(tick%190===0){rgT+=(Math.random()-0.5)*0.3;rgT=Math.min(5,Math.max(0.5,rgT));}
-  feStepFn();if(tick%210===0){feFreq=0.05+Math.random()*0.15;fePhase=Math.random()*Math.PI*2;}
-  if(tick%70===0){const ks=PHI_ALL.map(([a,b])=>pk(a,b));const k=ks[Math.floor(Math.random()*ks.length)];if(phiE.has(k)&&phiE.size>2)phiE.delete(k);else phiE.add(k);}
-  lorStep();kStep();if(tick%250===0){kK=0.5+Math.random()*2.5;}
-  catStep();if(tick%8===0)spStep();
-  mL('c0',lyBuf.map(v=>v*2-1),'#5b8fc9',lyBuf2.map(v=>v*2-1),'#c87898');
-  mRG();mL('c2',feW,'#5b8fc9',feB,'#c87898');mPhi();
-  mL('c4',lorBuf,'#7aaa50');mKr();mCat();mSand();
-  const phi=phiVal(),mag=rgMag();
-  document.getElementById('v0').textContent='λ='+lyLambda.toFixed(2);
-  document.getElementById('v1').textContent='T='+rgT.toFixed(1);
-  document.getElementById('v2').textContent='F='+feF.toFixed(3);
-  document.getElementById('v3').textContent='Φ='+phi.toFixed(2);
-  document.getElementById('v4').textContent='z='+lz.toFixed(1);
-  document.getElementById('v5').textContent=kR>0.8?'senkron':kR>0.5?'kısmi':'ayrık';
-  document.getElementById('v6').textContent=catDW()?'çift':'tek';
-  document.getElementById('v7').textContent=(spAv.reduce((a,b)=>a+b,0)/N).toFixed(0);
-  if(running)requestAnimationFrame(loop);
-}
-
-
-// ── SYSTEM PROMPT ─────────────────────────────────────────
-
-// ── GATE ──────────────────────────────────────────────────
-
-// ── CARD DATABASE ─────────────────────────────────────────
-const CARD_DB = {
-  "Deli": {
-    arcana:"major", upright:"Saf potansiyel, başlangıçların eşiği, sonsuz olasılık. Ruh bedene ilk adımını atarken taşıdığı o ilk heyecan.",
-    reversed:"Dikkatsizlik, sorumsuzluk, başlamaktan korku ya da tam tersi—düşünmeden atlamak.",
-    karmic:"Ruhun bu bedene ilk kez girdiği andaki masumiyeti. Karma dersi: deneyim kazanmak için düşmek gerekir, düşmekten korkmak değil."
-  },
-  "Büyücü": {
-    arcana:"major", upright:"İrade, beceri, manifestasyon gücü. Yukarıdaki aşağıda, içerideki dışarıda—dört elementi bir arada tutan bilinçli irade.",
-    reversed:"Manipülasyon, yeteneklerin kötüye kullanımı, kandırma, potansiyelin boşa harcanması.",
-    karmic:"Karmik tema: Bu yaşamda öğrenilmesi gereken ders, ham gücün sorumlu kullanımı. Geçmiş yaşamlarda güç suistimali olabilir."
-  },
-  "Yüksek Rahibe": {
-    arcana:"major", upright:"Sezgi, gizem, iç bilgelik, bilinçdışının sesi. Söylenmeyeni bilmek, görünmeyeni görmek.",
-    reversed:"Sezginin bastırılması, sırların saklanması, iç sesi dışarıdaki gürültüye kaptırma.",
-    karmic:"Karmik tema: Ruhun en derin katmanlarında saklanan bilgelik. Ata ruhlarıyla bağlantı, önceki yaşamların birikimi."
-  },
-  "İmparatoriçe": {
-    arcana:"major", upright:"Bereket, doğurganlık, duygu zengini yaratıcılık, annelik enerjisi, doğayla uyum.",
-    reversed:"Aşırı bağımlılık, kontrolcülük, ihmal, yaratıcı tıkanma, bedensel yoksunluk.",
-    karmic:"Karmik tema: Vermek ve almak arasındaki kadim denge. Önceki yaşamlarda ya aşırı fedakarlık ya da aşırı bencillik izleri."
-  },
-  "İmparator": {
-    arcana:"major", upright:"Yapı, düzen, otorite, güvenlik zemini. Kaos üzerine düzen inşa etme kapasitesi.",
-    reversed:"Tiranlık, katılık, kontrolü bırakamama, babadan gelen yaralar, güvensiz temel.",
-    karmic:"Karmik tema: Güç ve sorumluluk arasındaki ilişki. Otorite figürleriyle geçmiş yaşam sözleşmeleri."
-  },
-  "Başrahip": {
-    arcana:"major", upright:"Gelenek, öğreti, ruhsal rehberlik, toplumsal değerler, görünür öğretmen.",
-    reversed:"Dogmatizm, körü körüne itaat, dışarıdan dayatılan inançlar, gerçek özgürlüğü kısıtlayan kurallar.",
-    karmic:"Karmik tema: Ruhsal otorite ile bireysel özgürlük arasındaki gerilim. Din, kültür veya aile sisteminden taşınan inançlar."
-  },
-  "Aşıklar": {
-    arcana:"major", upright:"Özgür seçimle kurulan bağ, değerlere göre karar alma, gerçek uyum, kalp ile akıl birliği.",
-    reversed:"Seçim kaçınma, yanlış değerlere bağlanma, iki taraf arasında kalmak, gerçek olmayan birliktelik.",
-    karmic:"Karmik tema: Ruhlar arasındaki kadim sözleşmeler. Twin flame ve soulmate bağları. Seçim özgürlüğü dersi."
-  },
-  "Savaş Arabası": {
-    arcana:"major", upright:"Zıt güçleri tek yönde sürebilme, irade zaferi, odaklanmış hareket, kontrol altındaki güç.",
-    reversed:"Kontrolü kaybetme, zıt yönlerde çekilme, agresif bastırma, çatışmayı yönetememe.",
-    karmic:"Karmik tema: Çatışmadan kaçınmak yerine onunla dans etmeyi öğrenmek. Savaşçı ruh geçmişi."
-  },
-  "Güç": {
-    arcana:"major", upright:"İçsel otorite, sevgiyle gelen güç, aslanla barış, sabır ve cesaret birlikteliği.",
-    reversed:"Bastırılmış güç, dışa vurulan öfke veya tam tersi tamamen bastırma, kendi aslanından korku.",
-    karmic:"Karmik tema: Ham gücü sevgiyle dönüştürme dersi. Geçmiş yaşamlarda güçsüzlük ya da zalimlik izleri."
-  },
-  "Ermiş": {
-    arcana:"major", upright:"İç ışık, kendi bilgeliğini bulma, içe çekilme ve rehberlik, doğru anın beklenmesi.",
-    reversed:"İzolasyon, kendi ışığını saklamak, dış onaya aşırı bağımlılık, rehberliği reddetmek.",
-    karmic:"Karmik tema: Kendi öğretmenin olmak. Ata ruhlarıyla bağlantı. Yalnızlıkla barışmak."
-  },
-  "Kader Çarkı": {
-    arcana:"major", upright:"Döngülerin dönüşü, yeni bir evrenin başlangıcı ya da eskisinin kapanışı, karmik momentum.",
-    reversed:"Döngü içinde sıkışma, değişime direnç, örüntüleri görememe, kadere teslim olmama.",
-    karmic:"Karmik tema: Çok yaşamlı döngüler. Bu hayatta kapanmak üzere olan karmik döngüler. Tesadüf yoktur."
-  },
-  "Adalet": {
-    arcana:"major", upright:"Hakikat, denge, hesap, her şeyin kendi ağırlığınca değerlendirilmesi, netleşme.",
-    reversed:"Haksızlık, taraflı yargı, sonuçlardan kaçma, sorumluluk almama.",
-    karmic:"Karmik tema: Karmik denge yasası. Bu hayatta ödenmesi gereken borçlar veya alınacak haklar. Gerçek adalet kendiliğinden gelir."
-  },
-  "Asılı Adam": {
-    arcana:"major", upright:"Bırakış, yeni perspektif için eski konumdan vazgeçme, bilinçli duraklama, teslim olma.",
-    reversed:"Gereksiz özveride inat, kurban rolü, bırakmayı reddediş, kontrol takıntısı.",
-    karmic:"Karmik tema: Teslim olmayı öğrenmek. Kontrol illüzyonunu bırakmak. Ruh'un zaman kavramı bedeninkinden farklıdır."
-  },
-  "Ölüm": {
-    arcana:"major", upright:"Dönüşüm, tamamlanmış bir şeyin doğal sonu, yeniden doğuş için alan açma, geçiş.",
-    reversed:"Değişime direnç, eskiyi tutunma, tamamlanmamış geçiş, yarım kalan bırakış.",
-    karmic:"Karmik tema: Ruhun yeniden doğuş döngüsü. Bu hayatta tamamlanması gereken bir şey var. Ölüm değil, dönüşüm."
-  },
-  "Denge": {
-    arcana:"major", upright:"Akış, ölçülülük, sabır, iki zıttı bir arada tutma, ritmik denge, zamanın bilgeliği.",
-    reversed:"Aşırılık, sabırsızlık, dengesizlik, iki şeyi aynı anda isteyip hiçbirini tam alamama.",
-    karmic:"Karmik tema: Zamanlamanın mükemmelliğine güvenmek. Acele edilmiş karmik dersler tekrar gelir."
-  },
-  "Şeytan": {
-    arcana:"major", upright:"Gölgenin farkındalığı, bağlanmaların görülmesi, materyal dünyanın tuzaklarını tanıma.",
-    reversed:"Zincirlerin fark edilmesi, bağımlılıktan yavaş kurtuluş, gölgeyle yüzleşme cesareti.",
-    karmic:"Karmik tema: Ruhun özgür irade testleri. Bağımlılık örüntüleri çok yaşamlar boyu tekrar eder."
-  },
-  "Kule": {
-    arcana:"major", upright:"Ani yıkım, sahte temellerin çöküşü, özgürleştirici yıkılma, gerçeğin gün yüzüne çıkması.",
-    reversed:"Yıkımdan önce uyarılar, kaçınılan ama zorunlu çöküş, inkar.",
-    karmic:"Karmik tema: Gerçek olmayan hiçbir şey sonsuza kadar ayakta duramaz. Kule yıkar ama yalnızca gerçek olmayanı."
-  },
-  "Yıldız": {
-    arcana:"major", upright:"Umut, iyileşme, ilham, karanlık sonrası aydınlık, ruhun yenilenme kapasitesi.",
-    reversed:"Umutsuzluk, iyileşmeye direnç, ilhamı görememe, kırılganlıktan kaçınma.",
-    karmic:"Karmik tema: Ruhun doğal iyileşme kapasitesi. Her geçiş sonrasında yıldız bekler."
-  },
-  "Ay": {
-    arcana:"major", upright:"Bilinçdışı, illüzyonlar, korkular, karanlıktaki gerçekler, dalgalanan duygular.",
-    reversed:"Korkuyla yüzleşme başlangıcı, illüzyonların dağılması, bilinçdışı mesajlar.",
-    karmic:"Karmik tema: Önceki yaşamlardan gelen korkular ve örüntüler. Bilinçdışı hafıza."
-  },
-  "Güneş": {
-    arcana:"major", upright:"Sevinç, aydınlık, başarı, çocuksu canlılık, netlik ve şeffaflık.",
-    reversed:"Sevinçten uzaklaşma, aşırı ciddiyet, yaratıcı engel.",
-    karmic:"Karmik tema: Ruhun doğal ışık hali. Sevinç bir hak, bir ödül değil."
-  },
-  "Yargı": {
-    arcana:"major", upright:"Uyanış, yenilenme, çağrıya cevap verme, yeniden doğuş, geçmişi bütünleştirme.",
-    reversed:"Çağrıyı duymama, uyanışa direnç, geçmiş hataları bırakamama.",
-    karmic:"Karmik tema: Ruhsal uyanış çağrısı. Bu yaşamın misyonuna cevap verme zamanı."
-  },
-  "Dünya": {
-    arcana:"major", upright:"Tamamlanma, bütünlük, bir döngünün mükemmel kapanışı, evrensel uyum.",
-    reversed:"Tamamlanmamışlık, son adımı atmaktan çekinme, özgürlükten korku.",
-    karmic:"Karmik tema: Ruhun bu yaşamdaki misyonunun tamamlanması. Bütünlük içinde dans."
-  },
-  "As Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Yeni bir ateşin başlangıcı, ham yaratıcı güç, ilk kıvılcım.",
-    reversed:"Gecikme, potansiyel henüz açığa çıkmamış.",
-    karmic:"Ruhun bu yaşama getirdiği ham enerji."
-  },
-  "İki Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Planlama, vizyon, dünyaya bakış, seçim eşiği.",
-    reversed:"Korku nedeniyle hareketsizlik, planı hayata geçirememe.",
-    karmic:"İki yol arasında ruhsal seçim."
-  },
-  "Üç Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"İlerleme, ufkun genişlemesi, beklenen gelişme.",
-    reversed:"Gecikmeler, hayal kırıklığı, beklenenden uzun süre.",
-    karmic:"Sabır ve bekleme karmik dersi."
-  },
-  "Dört Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Kutlama, temel atma, eve kavuşma, köklü güven.",
-    reversed:"Sürdürülemeyen mutluluk, aile gerilimi.",
-    karmic:"Güvenli bir zemin kurma karmik misyonu."
-  },
-  "Beş Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Çatışma, rekabet, görüş ayrılığı, enerji dağılması.",
-    reversed:"Çatışmaktan kaçınma ya da uzlaşma.",
-    karmic:"Gerilimden büyüme karmik dersi."
-  },
-  "Altı Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Zafer, takdir, başarı, toplumsal onay.",
-    reversed:"Gurur, başarının gölgesi, onay bağımlılığı.",
-    karmic:"Başarı ve alçakgönüllülük dengesi."
-  },
-  "Yedi Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Savunma, kendi pozisyonunu koruma, kararlılık.",
-    reversed:"Vazgeçme, meydan okuyanlardan kaçma.",
-    karmic:"Değerler için duruş karmik dersi."
-  },
-  "Sekiz Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Hız, acele mesajlar, hareketin ivmesi.",
-    reversed:"Gecikmeler, sinirlilik, yanlış zamanlama.",
-    karmic:"Akışa bırakmak vs. zorlamak."
-  },
-  "Dokuz Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Dayanıklılık, son adıma yaklaşmak, yorgun ama ayakta.",
-    reversed:"Paranoya, aşırı savunmacılık, güvensizlik.",
-    karmic:"Bitirme gücü karmik dersi."
-  },
-  "On Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Aşırı yük, çok fazla sorumluluk, baskı.",
-    reversed:"Yükü bırakma zamanı, yardım istemek.",
-    karmic:"Sınır koyma ve devretme dersi."
-  },
-  "Paж Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Heyecan, yeni bir ateşin habercisi, cesur keşif.",
-    reversed:"Dağınıklık, başladığını bitirememek.",
-    karmic:"Ham tutkunun olgunlaşması."
-  },
-  "Şövalye Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Hızlı hareket, tutku dolu eylem, macera.",
-    reversed:"Düşünmeden atılma, saldırganlık.",
-    karmic:"Cesaret ile ihtiyatın dengesi."
-  },
-  "Kraliçe Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Karizmatik güç, öz güven, sıcaklık, yaratıcı otorite.",
-    reversed:"Egosantrizm, kıskançlık, manipülasyon.",
-    karmic:"Güç ve şefkat birlikteliği."
-  },
-  "Kral Değnekler": {
-    arcana:"minor", suit:"Değnekler", element:"Ateş",
-    upright:"Vizyon sahibi liderlik, ilham verici otorite, büyük resmi görmek.",
-    reversed:"Baskıcılık, acelecilik, özgür ruhları kısıtlama.",
-    karmic:"Vizyon ve sorumluluk dengesi."
-  },
-  "As Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Duygusal doluluk, sevginin başlangıcı, sezginin açılması.",
-    reversed:"Duygusal blok, kalbi kapatma.",
-    karmic:"Saf sevgi kapasitesinin uyanışı."
-  },
-  "İki Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Karşılıklı bağ, iki ruh arasında köprü, denge içinde birliktelik.",
-    reversed:"İlişkide dengesizlik, tek taraflı bağ.",
-    karmic:"Karşılıklılık ve eşitlik karmik dersi."
-  },
-  "Üç Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Kutlama, topluluk, paylaşılan sevinç, dostluk.",
-    reversed:"Sosyal izolasyon, paylaşamama.",
-    karmic:"Birliktelik ve topluluk enerjisi."
-  },
-  "Dört Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"İçe kapanma, memnuniyetsizlik, yeni fırsatı görememek.",
-    reversed:"Durgunluktan uyanma, yeni fırsatı görme.",
-    karmic:"Minnettarlık ve farkındalık dersi."
-  },
-  "Beş Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Kayıp yasası, dökülen kahehlere odaklanma, üzüntü.",
-    reversed:"Ayakta kalanları görmeye başlama, iyileşme.",
-    karmic:"Kaybı kabullenip devam etme."
-  },
-  "Altı Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Geçmiş, masumiyet, eski anılar, nostaljik sıcaklık.",
-    reversed:"Geçmişte takılı kalma, ilerlemeye direnç.",
-    karmic:"Geçmişi bütünleştirme ve ilerleme."
-  },
-  "Yedi Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Hayal, illüzyon, çok fazla seçenek, kaçış.",
-    reversed:"Gerçeklikle yüzleşme, seçim yapma zamanı.",
-    karmic:"Hayal ile gerçek arasında denge."
-  },
-  "Sekiz Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Terk etme, anlam arayışı, daha derin bir şeyin çağrısı.",
-    reversed:"Geri dönme, terk edememe, anlamsızlık.",
-    karmic:"Anlam arayışı cesareti."
-  },
-  "Dokuz Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Tatmin, duygusal bolluk, dileğin gerçekleşmesi.",
-    reversed:"Yüzeysel doyum, gerçek mutluluğu kaçırma.",
-    karmic:"Gerçek tatmin ile yanılsama farkı."
-  },
-  "On Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Duygusal tamamlanma, aile mutluluğu, kalıcı sevinç.",
-    reversed:"Yüzeysel mutluluk, aile dinamiği sorunu.",
-    karmic:"Duygusal bütünlük karmik tamamlanması."
-  },
-  "Paж Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Duygusal mesaj, sezgisel fısıltı, hayal gücünün habercisi.",
-    reversed:"Aşırı hassasiyet, gerçekle hayalin karışması.",
-    karmic:"Sezgi ile mantığın dengelenmesi."
-  },
-  "Şövalye Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Romantik eylem, duygusal idealizm, şiirsel yürek.",
-    reversed:"Gerçekten kopuk romantizm, manipülatif çekicilik.",
-    karmic:"Derin bağ ile yüzeysel çekim ayrımı."
-  },
-  "Kraliçe Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Empatik derinlik, duygusal zeka, besleyici güç.",
-    reversed:"Duygusal manipülasyon, aşırı empati—kendini kaybetme.",
-    karmic:"Sınır içinde sevmek."
-  },
-  "Kral Kupalar": {
-    arcana:"minor", suit:"Kupalar", element:"Su",
-    upright:"Duygusal olgunluk, derin empati, kontrollü his.",
-    reversed:"Duygusal soğukluk, hisleri bastırma.",
-    karmic:"Duyguyu ifade etmek ile kontrol etmek."
-  },
-  "As Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Zihinsel netlik, hakikatin keskin kılıcı, yeni bir düşüncenin doğuşu.",
-    reversed:"Zihinsel kaos, kafa karışıklığı.",
-    karmic:"Hakikati söyleme ve duyma cesareti."
-  },
-  "İki Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Karar vermeme, denge halinde gerginlik, görmek istememe.",
-    reversed:"Gözlerden bağın düşmesi, zorlu kararı almak.",
-    karmic:"Belirsizlikle barışmak ve sonunda seçmek."
-  },
-  "Üç Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Kalp kırıklığı, acı veren hakikat, üzücü ama gerekli netleşme.",
-    reversed:"Acıyı işlemeye başlama, yavaş iyileşme.",
-    karmic:"Acıyı reddetmek yerine kucaklamak."
-  },
-  "Dört Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Dinlenme, zihinsel iyileşme, geri çekilme.",
-    reversed:"Zorla harekete geçme, gereken dinlenmeyi reddediş.",
-    karmic:"İyileşme için dur, izin ver."
-  },
-  "Beş Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Kayıp, çatışma sonrası acı, kazanılan ama pahalı zafer.",
-    reversed:"Utanç bırakma, çatışmadan öğrenme.",
-    karmic:"Hangi savaşların değer taşıdığını bilmek."
-  },
-  "Altı Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Geçiş, sakin sulara doğru yolculuk, sorundan uzaklaşma.",
-    reversed:"Kaçıştan dönme, geçişe hazır olmama.",
-    karmic:"İlerlemek için eskiyi bırakmak."
-  },
-  "Yedi Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Strateji, akıllıca hareket, gizli plan.",
-    reversed:"Kandırıcılık, doğrudan olmama.",
-    karmic:"Dürüstlük ile stratejinin dengesi."
-  },
-  "Sekiz Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Zihinsel hapishane, kendi koyduğun sınırlar, mağduriyet.",
-    reversed:"Zihinsel kısıtlamadan kurtuluş başlangıcı.",
-    karmic:"Zihin hapishanesi özgür iradenin bir testidir."
-  },
-  "Dokuz Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Kaygı, gece korkuları, zihinsel acı.",
-    reversed:"Kaygıyla yüzleşme, yardım aramak.",
-    karmic:"Zihnin yarattığı acı ile gerçek acının ayrımı."
-  },
-  "On Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Bir dönemin acı sonu, yenilgi, dönüm noktası.",
-    reversed:"Yenilgiden kalkmak, yeni başlangıç.",
-    karmic:"Her son bir başlangıçtır."
-  },
-  "Paж Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Keskin zeka, merak, hızlı düşünce, yeni fikir.",
-    reversed:"Düşünmeden konuşma, acı eleştiri.",
-    karmic:"Zeka ile empatiyi birleştirmek."
-  },
-  "Şövalye Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Hızlı düşünce ve eylem, kararlı hareket.",
-    reversed:"Saldırganlık, sabırsızlık, düşünmeden atılma.",
-    karmic:"Hız ile öngörüyü dengelemek."
-  },
-  "Kraliçe Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Analitik zeka, bağımsız düşünce, acı gerçeği söyleme.",
-    reversed:"Soğukluk, keskin dil, acımasız yargı.",
-    karmic:"Gerçeği sevgiyle söylemek."
-  },
-  "Kral Kılıçlar": {
-    arcana:"minor", suit:"Kılıçlar", element:"Hava",
-    upright:"Adil yargı, entelektüel otorite, mantıklı liderlik.",
-    reversed:"Soğuk otoriter yargı, duygusuzluk.",
-    karmic:"Adalet ve merhamet birlikteliği."
-  },
-  "As Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Yeni maddi fırsat, güvenli zemin, somut başlangıç.",
-    reversed:"Güvensiz zemin, maddi fırsatı kaçırma.",
-    karmic:"Bu dünyada var olmayı öğrenmek."
-  },
-  "İki Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Denge, değişen koşullara adapte olma, esneklik.",
-    reversed:"Dengesizlik, çok fazla şeyi idare etmeye çalışma.",
-    karmic:"Uyum ve akış içinde pratiklik."
-  },
-  "Üç Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"İşbirliği, çalışma mükemmelliği, takım başarısı.",
-    reversed:"Motivasyon kaybı, çabayı takdir etmeme.",
-    karmic:"Birlikte yaratma dersi."
-  },
-  "Dört Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Güvenlik ihtiyacı, biriktirme, kontrolde tutma.",
-    reversed:"Cimrilik ya da kontrolü bırakmak.",
-    karmic:"Güvenlik ve paylaşım dengesi."
-  },
-  "Beş Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Maddi zorluk, dışlanmışlık hissi, güvensizlik.",
-    reversed:"Yardım kapısına doğru dönüş, kabul.",
-    karmic:"Yoksulluğun ruhsal dersleri."
-  },
-  "Altı Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Cömertlik, denge içinde verme/alma, maddi denge.",
-    reversed:"Dengesiz paylaşım, bağımlılık.",
-    karmic:"Vermek ve almak arasındaki kutsal denge."
-  },
-  "Yedi Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Sabırlı bekleme, ekim sonrası beklenti, değerlendirme.",
-    reversed:"Hayal kırıklığı, yanlış yatırım.",
-    karmic:"Emek ve sabırla beklemek."
-  },
-  "Sekiz Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Ustalık, zanaata adanma, detaylara özen.",
-    reversed:"Mükemmeliyetçilik, takıntılı çalışma.",
-    karmic:"Zanaatın meditasyona dönüşmesi."
-  },
-  "Dokuz Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Öz yeterlililk, kazanılmış lüks, bağımsızlık.",
-    reversed:"Aşırı bağımsızlık, yalnızlık.",
-    karmic:"Güvenlik içinde özgürlük."
-  },
-  "On Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Aile mirası, kuşaklar boyu güvenlik, uzun vadeli başarı.",
-    reversed:"Aile dinamiklerinde sorun, mirastaki karmaşa.",
-    karmic:"Mirası aktarma ve alma."
-  },
-  "Paж Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Pratik öğrenme, yeni bir işin habercisi, somut adım.",
-    reversed:"Hayal kırıklığı, tembellik, pratik olmama.",
-    karmic:"Büyük hayalleri küçük adımlara çevirmek."
-  },
-  "Şövalye Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Metodoloji, güvenilirlik, yavaş ama sağlam ilerleme.",
-    reversed:"Katılık, değişime direnç, durgunluk.",
-    karmic:"Güvenilirlik ve esneklik dengesi."
-  },
-  "Kraliçe Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Pratik zeka, bolluk, besleyici güç, doğayla uyum.",
-    reversed:"Maddi kaygı, aşırı pratiklik, ruhsallığı ihmal.",
-    karmic:"Madde ve ruhun birliği."
-  },
-  "Kral Pentaküller": {
-    arcana:"minor", suit:"Pentaküller", element:"Toprak",
-    upright:"Maddi otorite, güvenli liderlik, uzun vadeli vizyon.",
-    reversed:"Maddi takıntı, iş hayatında tükenme.",
-    karmic:"Güvenlik ile yaşam dengesini kurmak."
-  },
-};
-
-// ── SYSTEM PROMPT ─────────────────────────────────────────
-  const SYSTEM_PROMPT = '';
-
-// GATE_PASS removed — auth via Worker
-
-async function checkGate(){
-  const val=document.getElementById('gateInput').value.trim();
-  const btn=document.querySelector('#gate button');
-  if(!val){
-    const err=document.getElementById('gateErr');
-    err.textContent='Kod gir';err.style.opacity='1';
-    setTimeout(()=>err.style.opacity='0',2000);return;
-  }
-  btn.textContent='...';btn.disabled=true;
-  try{
-    const res=await fetch(WORKER_URL,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({auth:val,messages:[{role:'user',content:'ping'}],system:'ping'})
-    });
-    if(res.status===200){
-      localStorage.setItem('tarot_auth',val);
-      document.getElementById('gate').style.opacity='0';
-      document.getElementById('gate').style.transition='opacity 0.6s';
-      setTimeout(()=>document.getElementById('gate').style.display='none',600);
-    } else {
-      const err=document.getElementById('gateErr');
-      err.textContent='Yanlış kod — tekrar dene';
-      err.style.opacity='1';
-      setTimeout(()=>err.style.opacity='0',2500);
-      document.getElementById('gateInput').value='';
-    }
-  } catch(e){
-    const err=document.getElementById('gateErr');
-    err.textContent='Bağlantı hatası';err.style.opacity='1';
-    setTimeout(()=>err.style.opacity='0',2500);
-  }
-  btn.textContent='Gir ↯';btn.disabled=false;
-}
-
-// Auto-pass if already authenticated
-const _stored=localStorage.getItem('tarot_auth');
-if(_stored&&_stored!=='1'){
-  document.getElementById('gate').style.display='none';
-} else if(_stored==='1'){
-  localStorage.removeItem('tarot_auth');
-}
-
-rgInit();for(let i=0;i<20;i++)rgStep();
-kInit();spInit();
-setTimeout(loop,150);
-</script>
-</body>
-</html>.eng-v{font-size:8.5px;color:var(--mist);margin-top:2px;text-align:center;font-family:'Cinzel',serif;}
-
-/* Active spread info */
-.spread-info{
-  display:flex;align-items:center;gap:14px;
-  padding:10px 16px;background:var(--ink2);
-  border:0.5px solid var(--rim2);border-radius:10px;
+/* Mode Toggle */
+.mode-toggle{
+  display:flex;gap:10px;justify-content:center;
   margin-bottom:1rem;
 }
-.spread-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background 0.3s;}
-.spread-meta{flex:1;}
-.spread-name-big{font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.1em;}
-.spread-desc-small{font-size:12px;color:var(--fog);font-style:italic;}
-.next-info{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
-.next-pos-label{font-family:'Cinzel',serif;font-size:10px;color:var(--fog);letter-spacing:0.08em;}
-.next-pos-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.08em;}
-.deck-rem{font-size:10px;color:var(--fog);letter-spacing:0.05em;}
-
-/* Controls */
-.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1.4rem;}
-.btn-draw{
-  font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.15em;
-  padding:12px 30px;background:transparent;
-  border:0.5px solid var(--gold);border-radius:6px;
-  color:var(--gold);cursor:pointer;transition:all 0.2s;
-}
-.btn-draw:hover{background:rgba(200,164,72,0.07);}
-.btn-draw:active{transform:scale(0.98);}
-.btn-sm{
-  font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;
-  padding:8px 14px;background:transparent;
-  border:0.5px solid var(--rim2);border-radius:6px;
-  color:var(--mist);cursor:pointer;transition:all 0.2s;
-}
-.btn-sm:hover{border-color:var(--fog);color:var(--paper);}
-.prog{font-family:'Cinzel',serif;font-size:11px;color:var(--fog);letter-spacing:0.1em;margin-left:auto;}
-
-/* Cards */
-.spread-area{
-  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
-  min-height:50px;padding:0.5rem 0 1.5rem;
-  border-bottom:0.5px solid var(--rim);margin-bottom:1.4rem;
-}
-.empty-hint{font-size:14px;color:var(--fog);font-style:italic;padding:2rem 0;text-align:center;letter-spacing:0.05em;width:100%;}
-
-.card-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;}
-.card-pos-lbl{
-  font-family:'Cinzel',serif;font-size:8px;
-  letter-spacing:0.09em;text-align:center;
-  max-width:88px;line-height:1.4;
-}
-.tcard{
-  width:84px;height:138px;border-radius:8px;
-  border:0.5px solid var(--rim);background:var(--ink2);
+.mode-btn{
+  flex:1;max-width:200px;
   display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:8px 5px;text-align:center;
-  transition:border-color 0.3s;
-  animation:reveal 0.35s ease;
+  padding:12px 16px;gap:4px;
+  background:var(--ink2);border:1px solid var(--rim);
+  border-radius:10px;cursor:pointer;
+  transition:all 0.2s;
 }
-@keyframes reveal{from{opacity:0;transform:translateY(6px) scale(0.97);}to{opacity:1;transform:none;}}
-.tcard.rev{transform:rotate(180deg);}
-.tc-arc{font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.07em;color:var(--fog);text-transform:uppercase;margin-bottom:4px;}
-.tc-glyph{font-size:21px;line-height:1;margin-bottom:5px;}
-.tc-name{font-size:9.5px;color:var(--paper);line-height:1.35;}
-.tc-rev{font-size:8px;color:var(--rose);margin-top:3px;font-style:italic;}
-.card-orb{width:4px;height:4px;border-radius:50%;margin-top:5px;opacity:0.5;}
+.mode-btn:hover{border-color:var(--fog);transform:translateY(-1px);}
+.mode-btn.active{border-color:var(--gold);background:rgba(200,164,72,0.08);}
+.mode-icon{font-size:20px;}
+.mode-label{font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.08em;color:var(--paper);}
+.mode-desc{font-size:10px;color:var(--fog);}
+.mode-btn.active .mode-label{color:var(--gold);}
 
-/* Result */
-.result-panel{
-  background:var(--ink2);border:0.5px solid var(--rim2);
-  border-radius:10px;padding:1.4rem 1.6rem;display:none;
+/* Manuel Controls */
+.manual-controls{
+  background:var(--ink2);border:1px solid var(--rim2);
+  border-radius:12px;padding:1rem;margin-bottom:1rem;
 }
-.result-hdr{
-  font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.22em;
-  color:var(--gold);text-transform:uppercase;margin-bottom:1rem;text-align:center;
+.manual-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;font-size:13px;color:var(--mist);
 }
-.result-list{list-style:none;display:flex;flex-direction:column;gap:0;}
-.result-list li{
-  display:flex;align-items:baseline;gap:10px;
-  font-size:14px;padding:7px 0;
-  border-bottom:0.5px solid var(--rim);
+.manual-pos-name{
+  font-family:'Cinzel',serif;font-size:14px;
+  color:var(--gold);letter-spacing:0.08em;
 }
-.result-list li:last-child{border:none;}
-.rl-pos{font-family:'Cinzel',serif;font-size:10px;color:var(--fog);letter-spacing:0.07em;min-width:110px;flex-shrink:0;}
-.rl-card{color:var(--paper);}
-.rl-rev{color:var(--rose);font-style:italic;font-size:12px;margin-left:4px;}
-.copy-btn{
-  display:block;width:100%;margin-top:1.2rem;
-  font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.15em;
-  padding:11px;background:transparent;
-  border:0.5px solid var(--amethyst);border-radius:6px;
-  color:var(--amethyst);cursor:pointer;transition:all 0.2s;
+.manual-input-row{
+  display:flex;gap:10px;align-items:center;
+  margin-bottom:12px;
 }
-.copy-btn:hover{background:rgba(148,120,192,0.07);}
-.copy-ok{
-  text-align:center;font-size:12px;color:var(--sage);
-  margin-top:8px;font-style:italic;opacity:0;transition:opacity 0.3s;
+.card-select{
+  flex:1;padding:10px 14px;
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:8px;color:var(--paper);
+  font-family:'Cinzel',serif;font-size:12px;
+  cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a8a9a' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
 }
-.copy-ok.show{opacity:1;}
-.interp-panel{margin-top:1.2rem;border-top:0.5px solid var(--rim);padding-top:1.2rem;display:none;}
-.interp-loading{text-align:center;padding:2rem;font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.2em;color:var(--fog);}
-.interp-dot{display:inline-block;animation:blink 1.4s infinite;}
-.interp-dot:nth-child(2){animation-delay:0.2s;}
-.interp-dot:nth-child(3){animation-delay:0.4s;}
-@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
-.interp-hdr{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.22em;color:var(--amethyst);text-transform:uppercase;margin-bottom:1rem;text-align:center;}
-.interp-text{font-size:16px;line-height:1.85;color:var(--paper);}
-.interp-text h1,.interp-text h2,.interp-text h3{font-family:'Cinzel',serif;font-weight:400;color:var(--gold);margin:1.4rem 0 0.6rem;font-size:0.9rem;letter-spacing:0.15em;}
-.interp-text h1{font-size:1rem;text-align:center;margin-bottom:1rem;}
-.interp-text p{margin-bottom:0.9rem;}
-.interp-text em{color:var(--mist);font-style:italic;}
-.interp-error{text-align:center;padding:1.5rem;font-size:14px;color:var(--rose);font-style:italic;}
+.card-select:focus{outline:none;border-color:var(--gold);}
+.card-select option{background:var(--ink);color:var(--paper);}
+.card-select optgroup{font-weight:bold;color:var(--gold);font-style:normal;}
 
-/* About section */
-.about{padding:2rem 0;border-top:0.5px solid var(--rim);}
-.about h2{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.18em;font-weight:400;margin-bottom:1.2rem;color:var(--paper);}
-.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.about-card{
-  background:var(--ink2);border:0.5px solid var(--rim);
-  border-radius:8px;padding:1rem 1.2rem;
+.reverse-toggle{
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;user-select:none;
 }
-.about-card h3{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:0.6rem;font-weight:400;}
-.about-card p{font-size:14px;color:var(--paper2);line-height:1.7;}
-.about-card ul{font-size:13px;color:var(--paper2);line-height:1.8;padding-left:1rem;}
-
-/* Books */
-.books{padding:1.5rem 0;border-top:0.5px solid var(--rim);}
-.books h2{font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.18em;font-weight:400;margin-bottom:1.2rem;color:var(--paper);}
-.book-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
-.book{
-  background:var(--ink2);border:0.5px solid var(--rim);
-  border-radius:8px;padding:1rem;
-  border-left:2px solid var(--amethyst);
+.reverse-toggle input{
+  width:18px;height:18px;
+  accent-color:var(--gold);cursor:pointer;
 }
-.book-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.08em;color:var(--paper);margin-bottom:4px;}
-.book-author{font-size:12px;color:var(--fog);font-style:italic;margin-bottom:6px;}
-.book-note{font-size:12px;color:var(--paper2);line-height:1.5;}
+.reverse-label{
+  font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:0.08em;color:var(--mist);
+}
+.reverse-toggle:hover .reverse-label{color:var(--paper);}
 
-/* Footer */
-footer{
-  text-align:center;padding:2rem 0 1rem;
-  border-top:0.5px solid var(--rim);
-  font-family:'Cinzel',serif;font-size:10px;
-  letter-spacing:0.2em;color:var(--fog);
+.btn-add-card{
+  padding:10px 20px;
+  background:linear-gradient(135deg, var(--gold) 0%, #a08030 100%);
+  border:none;border-radius:8px;
+  font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:0.1em;color:var(--ink);
+  cursor:pointer;transition:all 0.2s;
+  white-space:nowrap;
+}
+.btn-add-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(200,164,72,0.3);}
+.btn-add-card:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+.manual-actions{
+  display:flex;justify-content:space-between;align-items:center;
+  padding-top:10px;border-top:1px solid var(--rim);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:var(--ink);}
-::-webkit-scrollbar-thumb{background:var(--rim2);border-radius:2px;}
+/* Reader Panel */
+.reader-panel{
+  background:var(--ink2);border:1px solid var(--rim2);
+  border-radius:12px;padding:1.2rem;margin-bottom:1rem;
+}
+.reader-header{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:12px;
+  font-family:'Cinzel',serif;font-size:14px;
+  color:var(--paper);letter-spacing:0.05em;
+}
+.reader-icon{font-size:24px;}
+.reader-input{
+  width:100%;min-height:180px;padding:14px;
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:10px;color:var(--paper);
+  font-family:inherit;font-size:13px;line-height:1.6;
+  resize:vertical;
+}
+.reader-input:focus{outline:none;border-color:var(--gold);}
+.reader-input::placeholder{color:var(--fog);font-style:italic;}
+.reader-actions{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;
+}
+.btn-reader-interpret{
+  padding:12px 28px;
+  background:linear-gradient(135deg, var(--gold) 0%, #a08030 100%);
+  border:none;border-radius:10px;
+  font-family:'Cinzel',serif;font-size:13px;
+  letter-spacing:0.12em;color:var(--ink);
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-reader-interpret:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(200,164,72,0.35);}
+.btn-reader-interpret:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 
-/* Mobile */
-@media(max-width:600px){
-  .engine{grid-template-columns:repeat(4,1fr);}
-  .about-grid{grid-template-columns:1fr;}
-  .snav-btn{font-size:9px;padding:7px 11px;}
-  .spread-info{flex-wrap:wrap;gap:8px;}
-  h1{font-size:1.5rem;}
+.reader-result{
+  margin-top:1.2rem;padding-top:1.2rem;
+  border-top:1px solid var(--rim);
+}
+.reader-result-header{
+  font-family:'Cinzel',serif;font-size:14px;
+  letter-spacing:0.1em;color:var(--gold);
+  margin-bottom:12px;
+}
+.reader-result-content{
+  font-size:14px;line-height:1.75;color:var(--paper2);
+}
+.reader-result-content p{margin-bottom:1em;}
+.reader-result-content h2{
+  font-family:'Cinzel',serif;font-size:15px;
+  color:var(--paper);margin:1.2em 0 0.6em;
+  letter-spacing:0.08em;
+}
+.reader-result-content strong{color:var(--paper);}
+.reader-result-content em{color:var(--mist);}
+
+/* Intuition Panel */
+.intuition-panel{
+  background:linear-gradient(135deg, var(--ink2) 0%, rgba(104,88,168,0.1) 100%);
+  border:1px solid var(--rim2);
+  border-radius:14px;padding:1.4rem;margin-bottom:1rem;
+}
+.intuition-header{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-bottom:16px;
+}
+.intuition-icon{font-size:28px;}
+.intuition-title{display:flex;flex-direction:column;gap:2px;}
+.intuition-title span:first-child{
+  font-family:'Cinzel',serif;font-size:15px;
+  color:var(--paper);letter-spacing:0.05em;
+}
+.intuition-subtitle{font-size:11px;color:var(--fog);}
+
+/* Cosmic Now */
+.cosmic-now{
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:10px;padding:12px;margin-bottom:14px;
+}
+.cosmic-now-header{
+  font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:0.1em;color:var(--gold);
+  margin-bottom:8px;text-transform:uppercase;
+}
+.cosmic-now-grid{
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));
+  gap:8px;
+}
+.cosmic-planet{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--paper2);
+}
+.cosmic-planet-icon{font-size:14px;}
+.cosmic-planet-pos{color:var(--mist);font-size:11px;}
+
+/* Voice Recorder */
+.voice-recorder{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:14px;
+}
+.btn-voice{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 18px;
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:25px;cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-voice:hover{border-color:var(--gold);transform:scale(1.02);}
+.btn-voice.recording{
+  border-color:#c47f6f;background:rgba(196,127,111,0.1);
+  animation:pulse-record 1.5s infinite;
+}
+@keyframes pulse-record{
+  0%,100%{box-shadow:0 0 0 0 rgba(196,127,111,0.4);}
+  50%{box-shadow:0 0 0 8px rgba(196,127,111,0);}
+}
+.voice-icon{font-size:18px;}
+.voice-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.08em;color:var(--paper);}
+.voice-status{font-size:12px;color:var(--mist);flex:1;}
+.voice-status.transcribing{color:var(--gold);}
+
+/* Intuition Input */
+.intuition-input{
+  width:100%;min-height:140px;padding:14px;
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:10px;color:var(--paper);
+  font-family:inherit;font-size:13px;line-height:1.6;
+  resize:vertical;margin-bottom:14px;
+}
+.intuition-input:focus{outline:none;border-color:var(--gold);}
+.intuition-input::placeholder{color:var(--fog);font-style:italic;}
+
+/* Analysis Section */
+.intuition-analysis{
+  background:var(--ink);border:1px solid var(--rim);
+  border-radius:10px;padding:14px;margin-bottom:14px;
+}
+.analysis-section{margin-bottom:12px;}
+.analysis-section:last-child{margin-bottom:0;}
+.analysis-header{
+  font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:0.08em;color:var(--gold);
+  margin-bottom:6px;
+}
+.analysis-content{font-size:13px;color:var(--paper2);line-height:1.5;}
+.analysis-tag{
+  display:inline-block;padding:3px 8px;
+  background:rgba(200,164,72,0.15);border-radius:4px;
+  font-size:11px;color:var(--gold);margin:2px;
+}
+.analysis-transit{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 0;border-bottom:1px solid var(--rim);
+}
+.analysis-transit:last-child{border-bottom:none;}
+
+/* Intuition Actions */
+.intuition-actions{
+  display:flex;justify-content:space-between;align-items:center;
+}
+.btn-intuition-analyze{
+  padding:12px 28px;
+  background:linear-gradient(135deg, #6858a8 0%, #9878c8 100%);
+  border:none;border-radius:10px;
+  font-family:'Cinzel',serif;font-size:13px;
+  letter-spacing:0.12em;color:var(--paper);
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-intuition-analyze:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(104,88,168,0.4);}
+.btn-intuition-analyze:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+/* Intuition Result */
+.intuition-result{
+  margin-top:1.2rem;padding-top:1.2rem;
+  border-top:1px solid var(--rim);
+}
+.intuition-result-header{
+  font-family:'Cinzel',serif;font-size:14px;
+  letter-spacing:0.1em;color:#9878c8;
+  margin-bottom:12px;
+}
+.intuition-result-content{
+  font-size:14px;line-height:1.75;color:var(--paper2);
+}
+.intuition-result-content p{margin-bottom:1em;}
+.intuition-result-content h2{
+  font-family:'Cinzel',serif;font-size:15px;
+  color:var(--paper);margin:1.2em 0 0.6em;
 }
 </style>
 </head>
 <body>
 
 <canvas id="starCanvas"></canvas>
-
-<!-- Gate -->
-<div id="gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--ink);z-index:100;display:flex;align-items:center;justify-content:center;">
-  <div style="text-align:center;padding:2rem;">
-    <div style="font-family:Cinzel,serif;font-size:1.4rem;letter-spacing:0.3em;color:var(--gold);margin-bottom:0.5rem;">✦</div>
-    <div style="font-family:Cinzel,serif;font-size:0.8rem;letter-spacing:0.25em;color:var(--fog);text-transform:uppercase;margin-bottom:2rem;">Matematik Tarotu</div>
-    <input id="gateInput" type="password" placeholder="giriş kodu" autocomplete="off"
-      style="display:block;width:220px;margin:0 auto 1rem;padding:12px 16px;background:var(--ink2);border:0.5px solid var(--rim2);border-radius:6px;color:var(--paper);font-family:Cinzel,serif;font-size:13px;letter-spacing:0.15em;text-align:center;outline:none;"
-      onkeydown="if(event.key==='Enter')checkGate()">
-    <button onclick="checkGate()"
-      style="font-family:Cinzel,serif;font-size:11px;letter-spacing:0.2em;padding:10px 28px;background:transparent;border:0.5px solid var(--gold);border-radius:6px;color:var(--gold);cursor:pointer;">
-      Gir ↯
-    </button>
-    <div id="gateErr" style="margin-top:1rem;font-size:12px;color:var(--rose);font-style:italic;opacity:0;transition:opacity 0.3s;"></div>
-  </div>
-</div>
 
 <div class="wrap">
 
@@ -1520,12 +596,145 @@ footer{
   </div>
 </div>
 
-<!-- Controls -->
-<div class="controls">
+<!-- Mode Toggle -->
+<div class="mode-toggle">
+  <button class="mode-btn active" id="modeMotor" onclick="setMode('motor')">
+    <span class="mode-icon">⚙️</span>
+    <span class="mode-label">Motor</span>
+  </button>
+  <button class="mode-btn" id="modeManual" onclick="setMode('manual')">
+    <span class="mode-icon">✋</span>
+    <span class="mode-label">Manuel</span>
+  </button>
+  <button class="mode-btn" id="modeReader" onclick="setMode('reader')">
+    <span class="mode-icon">🔮</span>
+    <span class="mode-label">Okuyucu</span>
+  </button>
+  <button class="mode-btn" id="modeIntuition" onclick="setMode('intuition')">
+    <span class="mode-icon">🌙</span>
+    <span class="mode-label">Sezgi</span>
+  </button>
+</div>
+
+<!-- Motor Controls -->
+<div class="controls" id="motorControls">
   <button class="btn-draw" onclick="drawCard()">Kart Çek ↯</button>
   <button class="btn-sm" id="pauseBtn" onclick="togglePause()">⏸ Durdur</button>
   <button class="btn-sm" onclick="clearSpread()">Yeni Açılım</button>
   <div class="prog" id="prog">0 / 0</div>
+</div>
+
+<!-- Manuel Controls -->
+<div class="manual-controls" id="manualControls" style="display:none;">
+  <div class="manual-header">
+    <span>Pozisyon için kart seç:</span>
+    <span class="manual-pos-name" id="manualPosName">—</span>
+  </div>
+  <div class="manual-input-row">
+    <select class="card-select" id="cardSelect">
+      <option value="">— Kart Seç —</option>
+    </select>
+    <label class="reverse-toggle">
+      <input type="checkbox" id="reverseCheck">
+      <span class="reverse-label">Ters</span>
+    </label>
+    <button class="btn-add-card" onclick="addManualCard()">Ekle ↯</button>
+  </div>
+  <div class="manual-actions">
+    <button class="btn-sm" onclick="clearSpread()">Sıfırla</button>
+    <div class="prog" id="manualProg">0 / 0</div>
+  </div>
+</div>
+
+<!-- Okuyucu Panel -->
+<div class="reader-panel" id="readerPanel" style="display:none;">
+  <div class="reader-header">
+    <span class="reader-icon">🔮</span>
+    <span>Fiziksel destenden çektiğin kartları yaz</span>
+  </div>
+  <textarea class="reader-input" id="readerInput" placeholder="Örnek:
+
+Sen: Kule (ters)
+Partner: Üç Kupalar
+İlişkinin Özü: Ermiş
+Engelleyen: Beş Kılıçlar (ters)
+...
+
+veya serbest formatta:
+İlk kart Kule ters geldi, ikinci kart üç kupalar düz..."></textarea>
+  <div class="reader-actions">
+    <button class="btn-sm" onclick="clearReader()">Temizle</button>
+    <button class="btn-reader-interpret" onclick="interpretReader()">Yorumla ✦</button>
+  </div>
+  <div class="reader-result" id="readerResult" style="display:none;">
+    <div class="reader-result-header">Karmik Yorum</div>
+    <div class="reader-result-content" id="readerResultContent"></div>
+  </div>
+</div>
+
+<!-- Sezgi Panel -->
+<div class="intuition-panel" id="intuitionPanel" style="display:none;">
+  <div class="intuition-header">
+    <span class="intuition-icon">🌙</span>
+    <div class="intuition-title">
+      <span>Durumunu anlat — sistem sana özel açılım önerecek</span>
+      <span class="intuition-subtitle">Ses kaydı veya yazı ile</span>
+    </div>
+  </div>
+  
+  <!-- Kozmik Durum -->
+  <div class="cosmic-now" id="cosmicNow">
+    <div class="cosmic-now-header">Şu An Gökyüzü</div>
+    <div class="cosmic-now-loading">Yükleniyor...</div>
+  </div>
+  
+  <!-- Ses Kaydı -->
+  <div class="voice-recorder">
+    <button class="btn-voice" id="voiceBtn" onclick="toggleVoiceRecord()">
+      <span class="voice-icon">🎤</span>
+      <span class="voice-label">Kayıt Başlat</span>
+    </button>
+    <div class="voice-status" id="voiceStatus"></div>
+  </div>
+  
+  <!-- Metin Girişi -->
+  <textarea class="intuition-input" id="intuitionInput" placeholder="Örnek:
+
+Ailemle tartıştım, çok sinirli hissediyorum. Yengeç burcuyum, 1985 doğumluyum. 
+
+Veya:
+
+İş yerinde bir fırsat var ama korkuyorum. Akrep yükselen, koç burcuyum.
+
+Doğum bilgin yoksa sadece durumu anlat, sistem yine de yardımcı olur."></textarea>
+  
+  <!-- Analiz Sonucu -->
+  <div class="intuition-analysis" id="intuitionAnalysis" style="display:none;">
+    <div class="analysis-section">
+      <div class="analysis-header">🎯 Tespit Edilen Bağlam</div>
+      <div class="analysis-content" id="analysisContext"></div>
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-header">🌟 Önerilen Açılım</div>
+      <div class="analysis-content" id="analysisSuggestion"></div>
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-header">🪐 Transit Etkiler</div>
+      <div class="analysis-content" id="analysisTransits"></div>
+    </div>
+  </div>
+  
+  <!-- Aksiyonlar -->
+  <div class="intuition-actions">
+    <button class="btn-sm" onclick="clearIntuition()">Temizle</button>
+    <button class="btn-intuition-analyze" onclick="analyzeIntuition()">Analiz Et ✦</button>
+  </div>
+  
+  <!-- Yorum Sonucu -->
+  <div class="intuition-result" id="intuitionResult" style="display:none;">
+    <div class="intuition-result-header">Kozmik Yorum</div>
+    <div class="intuition-result-content" id="intuitionResultContent"></div>
+  </div>
 </div>
 
 <!-- Cards -->
@@ -1568,44 +777,64 @@ footer{
   </div>
 </div>
 
-<!-- Books -->
-<div class="books">
-  <h2>Referans Kitaplar</h2>
-  <div class="book-list">
-    <div class="book">
-      <div class="book-title">Seventy-Eight Degrees of Wisdom</div>
-      <div class="book-author">Rachel Pollack</div>
-      <div class="book-note">Tarot literatürünün temel taşı. Her kartın psikolojik ve karmik derinliği için birincil referans.</div>
+<!-- Cosmic Status Bar -->
+<div class="cosmic-status">
+  <div class="cosmic-item moon-phase">
+    <span class="cosmic-icon" id="moonEmoji">🌑</span>
+    <div class="cosmic-text">
+      <span class="cosmic-label">Ay Fazı</span>
+      <span class="cosmic-value" id="moonPhaseName">—</span>
     </div>
-    <div class="book">
-      <div class="book-title">The Modern Witchcraft Book of Tarot</div>
-      <div class="book-author">Skye Alexander</div>
-      <div class="book-note">Pratik okuma teknikleri, aşk ve ilişki yorumları. Cadılık geleneği ile tarotun buluşma noktası.</div>
+  </div>
+  <div class="cosmic-item time-phase">
+    <span class="cosmic-icon" id="timeIcon">☀</span>
+    <div class="cosmic-text">
+      <span class="cosmic-label">Zaman</span>
+      <span class="cosmic-value" id="timePhase">—</span>
     </div>
-    <div class="book">
-      <div class="book-title">The Way of Tarot</div>
-      <div class="book-author">Alejandro Jodorowsky</div>
-      <div class="book-note">Kartların birbiriyle konuşmasını okumak için. Açılım içi dinamikler ve sembolik derinlik.</div>
+  </div>
+  <div class="cosmic-item draw-tempo">
+    <span class="cosmic-icon">⚡</span>
+    <div class="cosmic-text">
+      <span class="cosmic-label">Ritim</span>
+      <span class="cosmic-value" id="drawTempo">Hazır</span>
     </div>
-    <div class="book">
-      <div class="book-title">The Symbolism of the Tarot</div>
-      <div class="book-author">P.D. Ouspensky</div>
-      <div class="book-note">Felsefi ve sembolik katman. Her kartın evrensel arketip içindeki yeri.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">Tarot for Your Self</div>
-      <div class="book-author">Mary K. Greer</div>
-      <div class="book-note">Karmik okuma, shadow work ve kişisel dönüşüm için. Kartları "sen kim olabilirsin" sorusundan yorumlar.</div>
-    </div>
-    <div class="book">
-      <div class="book-title">Past-Life & Karmic Tarot</div>
-      <div class="book-author">Edain McCoy</div>
-      <div class="book-note">Geçmiş yaşam izleri ve karmik örüntüler. Ruhun yolculuğunu kartlarla okumak için.</div>
+  </div>
+  <div class="cosmic-item heat-toggle" onclick="toggleHeatMap()">
+    <span class="cosmic-icon">🔥</span>
+    <div class="cosmic-text">
+      <span class="cosmic-label">Isı Haritası</span>
+      <span class="cosmic-value" id="heatCount">0 çekim</span>
     </div>
   </div>
 </div>
 
-<footer>✦ Matematik Tarotu · Her açılım eşsizdir ✦</footer>
+<!-- Heat Map Modal -->
+<div class="heat-modal" id="heatModal" style="display:none;">
+  <div class="heat-content">
+    <div class="heat-header">
+      <h3>🔥 Kart Isı Haritası</h3>
+      <button class="heat-close" onclick="toggleHeatMap()">✕</button>
+    </div>
+    <div class="heat-body">
+      <div class="heat-section">
+        <h4>En Çok Çektiğin Kartlar</h4>
+        <div id="hotCards" class="heat-list"></div>
+      </div>
+      <div class="heat-section">
+        <h4>Hiç Çekmediğin Kartlar</h4>
+        <div id="coldCardsCount" class="heat-stat"></div>
+      </div>
+      <div class="heat-section">
+        <h4>Toplam İstatistik</h4>
+        <div id="totalStats" class="heat-stat"></div>
+      </div>
+      <button class="btn-reset-heat" onclick="resetHeatMap()">Isı Haritasını Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<footer>✦ MATEMATİK TAROTU · Sekiz Fonksiyon · Sonsuz Olasılık ✦</footer>
 
 </div><!-- /wrap -->
 
@@ -1630,81 +859,81 @@ const SPREADS = {
     id:'iliski',name:'İlişki Yansıması',desc:'İlişki · Gelecek Yönü · Karmik Okuma',color:'#c87898',
     tone:'ilişki · gelecek yönü · karmik okuma',
     positions:[
-      {num:'I',  name:'Sen',           desc:'şu anki enerji',      color:'#5b8fc9',λ:0.40, M:0,    F:0.12,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Partner',       desc:'onların enerjisi',     color:'#c47f6f',λ:0.40, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.30,Cat:0.10},
-      {num:'III',name:'İlişkinin Özü', desc:'temel bağ',            color:'#5aaa90',λ:0.20, M:0.30, F:0.15,Φ:0.55,Lz:0.45,Kr:0.40,Cat:0.00},
-      {num:'IV', name:'Engelleyen',    desc:'zorluk ve kök',        color:'#c49a50',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'V',  name:'Sana Mesaj',    desc:'kartların tavsiyesi',  color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
-      {num:'VI', name:'Karma Dersi',   desc:'ruhsal öğreti',        color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'VII',name:'Senaryo A',     desc:'seçim yapılırsa',      color:'#7aaa50',λ:0.50, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
-      {num:'VIII',name:'Senaryo B',    desc:'bekleyiş sürerse',     color:'#c86888',λ:0.50, M:-0.20,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
+      {num:'I',  name:'Sen',           desc:'şu anki enerji',      color:'#5b8fc9',λ:0,    M:0,    F:0.12,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Partner',       desc:'onların enerjisi',     color:'#c47f6f',λ:0,    M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.30,Cat:0.10},
+      {num:'III',name:'İlişkinin Özü', desc:'temel bağ',            color:'#5aaa90',λ:-0.10,M:0.30, F:0.15,Φ:0.55,Lz:0.45,Kr:0.40,Cat:0.00},
+      {num:'IV', name:'Engelleyen',    desc:'zorluk ve kök',        color:'#c49a50',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'V',  name:'Sana Mesaj',    desc:'kartların tavsiyesi',  color:'#9878c8',λ:-0.05,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+      {num:'VI', name:'Karma Dersi',   desc:'ruhsal öğreti',        color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'VII',name:'Senaryo A',     desc:'seçim yapılırsa',      color:'#7aaa50',λ:0.10, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
+      {num:'VIII',name:'Senaryo B',    desc:'bekleyiş sürerse',     color:'#c86888',λ:0.10, M:-0.20,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
     ]
   },
   tekkisi: {
     id:'tekkisi',name:'Tek Kişi',desc:'Bireysel · İçsel Yolculuk',color:'#98b4d0',
     tone:'bireysel içsel yolculuk · karmik okuma',
     positions:[
-      {num:'I',  name:'Şu Anki Ben',  desc:'mevcut enerji',       color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.75,Lz:0.25,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Güç',          desc:'taşıdığın ateş',      color:'#c49a50',λ:0.35, M:0.15, F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'III',name:'Gölge',        desc:'görülmeyi bekleyen',  color:'#6858a8',λ:0.50, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.40},
-      {num:'IV', name:'Mesaj',        desc:'evrenin sesi',        color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.85,Lz:0.15,Kr:0.10,Cat:0.00},
-      {num:'V',  name:'Yön',          desc:'önündeki yol',        color:'#7aaa50',λ:0.45, M:0,    F:0.12,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
+      {num:'I',  name:'Şu Anki Ben',  desc:'mevcut enerji',       color:'#98b4d0',λ:-0.05,M:0,    F:0.14,Φ:0.75,Lz:0.25,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Güç',          desc:'taşıdığın ateş',      color:'#c49a50',λ:-0.10,M:0.15, F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'III',name:'Gölge',        desc:'görülmeyi bekleyen',  color:'#6858a8',λ:0.05, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.40},
+      {num:'IV', name:'Mesaj',        desc:'evrenin sesi',        color:'#9878c8',λ:-0.15,M:0,    F:0.18,Φ:0.85,Lz:0.15,Kr:0.10,Cat:0.00},
+      {num:'V',  name:'Yön',          desc:'önündeki yol',        color:'#7aaa50',λ:-0.05,M:0,    F:0.12,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
     ]
   },
   karar: {
     id:'karar',name:'Karar Anı',desc:'Seçim · İki Yol · Sonuç',color:'#c8a448',
     tone:'karar anı · iki yol analizi',
     positions:[
-      {num:'I',  name:'Sen Şu An',    desc:'iç dünya',             color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Yol A',        desc:'birinci seçenek',      color:'#7aaa50',λ:0.50, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
-      {num:'III',name:'Yol B',        desc:'ikinci seçenek',       color:'#c87898',λ:0.50, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
-      {num:'IV', name:'Gizli Etki',   desc:'görünmeyenin sesi',    color:'#6858a8',λ:0.15, M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
-      {num:'V',  name:'Karma Mesajı', desc:'ruhun yönlendirmesi',  color:'#9878c8',λ:0.10, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.10},
-      {num:'VI', name:'Sonuç',        desc:'seçim yapılırsa',      color:'#c8a448',λ:0.45, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
+      {num:'I',  name:'Sen Şu An',    desc:'iç dünya',             color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Yol A',        desc:'birinci seçenek',      color:'#7aaa50',λ:0.05, M:0.20, F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
+      {num:'III',name:'Yol B',        desc:'ikinci seçenek',       color:'#c87898',λ:0.05, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.00},
+      {num:'IV', name:'Gizli Etki',   desc:'görünmeyenin sesi',    color:'#6858a8',λ:-0.10,M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
+      {num:'V',  name:'Karma Mesajı', desc:'ruhun yönlendirmesi',  color:'#9878c8',λ:-0.20,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.10},
+      {num:'VI', name:'Sonuç',        desc:'seçim yapılırsa',      color:'#c8a448',λ:-0.05,M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
     ]
   },
   ay: {
     id:'ay',name:'Ay Açılımı',desc:'Döngü · Dönüşüm · Niyet',color:'#a098c8',
     tone:'ay döngüsü · dönüşüm · niyet',
     positions:[
-      {num:'I',  name:'Döngü',        desc:'tekrar eden örüntü',   color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'II', name:'Bırakılan',    desc:'salıverilmesi gereken',color:'#c87898',λ:0.45, M:-0.10,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.45},
-      {num:'III',name:'Kazanılan',    desc:'yeni gelen enerji',    color:'#7aaa50',λ:0.40, M:0.10, F:0.16,Φ:0.70,Lz:0.30,Kr:0.15,Cat:0.00},
-      {num:'IV', name:'Gizlenen',     desc:'karanlıktaki güç',     color:'#5aaa90',λ:0.20, M:0,    F:0.10,Φ:0.55,Lz:0.45,Kr:0.20,Cat:0.30},
-      {num:'V',  name:'Destek',       desc:'yanındaki enerji',     color:'#98b4d0',λ:0.45, M:0.15, F:0.14,Φ:0.65,Lz:0.35,Kr:0.30,Cat:0.00},
-      {num:'VI', name:'Engel',        desc:'aşılması gereken',     color:'#c49a50',λ:0.45, M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.50},
-      {num:'VII',name:'Niyet',        desc:'ay niyeti',            color:'#9878c8',λ:0.15, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+      {num:'I',  name:'Döngü',        desc:'tekrar eden örüntü',   color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'II', name:'Bırakılan',    desc:'salıverilmesi gereken',color:'#c87898',λ:0,    M:-0.10,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.45},
+      {num:'III',name:'Kazanılan',    desc:'yeni gelen enerji',    color:'#7aaa50',λ:-0.05,M:0.10, F:0.16,Φ:0.70,Lz:0.30,Kr:0.15,Cat:0.00},
+      {num:'IV', name:'Gizlenen',     desc:'karanlıktaki güç',     color:'#5aaa90',λ:-0.10,M:0,    F:0.10,Φ:0.55,Lz:0.45,Kr:0.20,Cat:0.30},
+      {num:'V',  name:'Destek',       desc:'yanındaki enerji',     color:'#98b4d0',λ:0,    M:0.15, F:0.14,Φ:0.65,Lz:0.35,Kr:0.30,Cat:0.00},
+      {num:'VI', name:'Engel',        desc:'aşılması gereken',     color:'#c49a50',λ:0,    M:-0.15,F:0.08,Φ:0.60,Lz:0.40,Kr:0.15,Cat:0.50},
+      {num:'VII',name:'Niyet',        desc:'ay niyeti',            color:'#9878c8',λ:-0.15,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
     ]
   },
   yasam: {
     id:'yasam',name:'Genel Yaşam',desc:'İş · İlişki · Sağlık · Ruh · Yön',color:'#70a882',
     tone:'genel yaşam okuma · tüm alanlar',
     positions:[
-      {num:'I',  name:'Şu An',        desc:'genel enerji',         color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'İş & Kariyer', desc:'emek ve yaratım',      color:'#c49a50',λ:0.50, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.10,Cat:0.20},
-      {num:'III',name:'İlişkiler',    desc:'bağlar ve sevgi',      color:'#c87898',λ:0.45, M:0.25, F:0.12,Φ:0.60,Lz:0.40,Kr:0.35,Cat:0.10},
-      {num:'IV', name:'Sağlık',       desc:'beden ve enerji',      color:'#7aaa50',λ:0.50, M:0.10, F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.15},
-      {num:'V',  name:'Ruh & İçsel',  desc:'spiritüel yol',        color:'#9878c8',λ:0.10, M:0,    F:0.16,Φ:0.75,Lz:0.25,Kr:0.15,Cat:0.10},
-      {num:'VI', name:'Engel',        desc:'sizi durduran',        color:'#c47f6f',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'VII',name:'Güç',          desc:'kullanılmayan potansiyel',color:'#5b8fc9',λ:0.35,M:0,  F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'VIII',name:'Karma',       desc:'ruhsal öğreti',        color:'#6858a8',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
-      {num:'IX', name:'Yön',          desc:'önündeki 3 ay',        color:'#70a882',λ:0.45, M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.15},
+      {num:'I',  name:'Şu An',        desc:'genel enerji',         color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'İş & Kariyer', desc:'emek ve yaratım',      color:'#c49a50',λ:0.05, M:-0.20,F:0.12,Φ:0.65,Lz:0.35,Kr:0.10,Cat:0.20},
+      {num:'III',name:'İlişkiler',    desc:'bağlar ve sevgi',      color:'#c87898',λ:0,    M:0.25, F:0.12,Φ:0.60,Lz:0.40,Kr:0.35,Cat:0.10},
+      {num:'IV', name:'Sağlık',       desc:'beden ve enerji',      color:'#7aaa50',λ:0,    M:0.10, F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.15},
+      {num:'V',  name:'Ruh & İçsel',  desc:'spiritüel yol',        color:'#9878c8',λ:-0.20,M:0,    F:0.16,Φ:0.75,Lz:0.25,Kr:0.15,Cat:0.10},
+      {num:'VI', name:'Engel',        desc:'sizi durduran',        color:'#c47f6f',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'VII',name:'Güç',          desc:'kullanılmayan potansiyel',color:'#5b8fc9',λ:-0.10,M:0,  F:0.16,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'VIII',name:'Karma',       desc:'ruhsal öğreti',        color:'#6858a8',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.20},
+      {num:'IX', name:'Yön',          desc:'önündeki 3 ay',        color:'#70a882',λ:-0.05,M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.20,Cat:0.15},
     ]
   },
   gelecek: {
     id:'gelecek',name:'Gelecek Yolu',desc:'Zaman · Olasılık · Kader',color:'#c8a448',
     tone:'gelecek yolu · zaman açılımı · karmik olasılık',
     positions:[
-      {num:'I',  name:'Şu An',          desc:'mevcut enerji',               color:'#98b4d0',λ:0.40, M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
-      {num:'II', name:'Yakın Gelecek',  desc:'önümüzdeki haftalarda',       color:'#7aaa50',λ:0.50, M:0,    F:0.13,Φ:0.68,Lz:0.32,Kr:0.12,Cat:0.10},
-      {num:'III',name:'Uzak Gelecek',   desc:'önümüzdeki aylarda',          color:'#c8a448',λ:0.50, M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
-      {num:'IV', name:'Gizli Etki',     desc:'görünmeyenin şekillendirdiği',color:'#6858a8',λ:0.15, M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
-      {num:'V',  name:'Sana Bağlı',     desc:'senin yaratabileceğin',       color:'#9878c8',λ:0.35, M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
-      {num:'VI', name:'Kader Akışı',    desc:'değişmesi zor olan',          color:'#c87898',λ:0.10, M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.25},
-      {num:'VII',name:'Engelleyen',     desc:'dikkate alınması gereken',    color:'#c47f6f',λ:0.45, M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
-      {num:'VIII',name:'Senaryo A',     desc:'en olası yol',                color:'#70a882',λ:0.55, M:0.15, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
-      {num:'IX', name:'Senaryo B',      desc:'alternatif yol',              color:'#c49a50',λ:0.55, M:-0.15,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
-      {num:'X',  name:'Sonuç',          desc:'her iki yolun ortak noktası', color:'#c8a448',λ:0.25, M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
+      {num:'I',  name:'Şu An',          desc:'mevcut enerji',               color:'#98b4d0',λ:0,    M:0,    F:0.14,Φ:0.70,Lz:0.30,Kr:0.10,Cat:0.00},
+      {num:'II', name:'Yakın Gelecek',  desc:'önümüzdeki haftalarda',       color:'#7aaa50',λ:-0.05,M:0,    F:0.13,Φ:0.68,Lz:0.32,Kr:0.12,Cat:0.10},
+      {num:'III',name:'Uzak Gelecek',   desc:'önümüzdeki aylarda',          color:'#c8a448',λ:-0.10,M:0,    F:0.14,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.15},
+      {num:'IV', name:'Gizli Etki',     desc:'görünmeyenin şekillendirdiği',color:'#6858a8',λ:-0.15,M:0,    F:0.08,Φ:0.55,Lz:0.45,Kr:0.15,Cat:0.45},
+      {num:'V',  name:'Sana Bağlı',     desc:'senin yaratabileceğin',       color:'#9878c8',λ:-0.10,M:0,    F:0.18,Φ:0.80,Lz:0.20,Kr:0.10,Cat:0.00},
+      {num:'VI', name:'Kader Akışı',    desc:'değişmesi zor olan',          color:'#c87898',λ:-0.20,M:0,    F:0.10,Φ:0.50,Lz:0.50,Kr:0.20,Cat:0.25},
+      {num:'VII',name:'Engelleyen',     desc:'dikkate alınması gereken',    color:'#c47f6f',λ:0,    M:-0.20,F:0.08,Φ:0.65,Lz:0.35,Kr:0.15,Cat:0.50},
+      {num:'VIII',name:'Senaryo A',     desc:'en olası yol',                color:'#70a882',λ:0.08, M:0.15, F:0.12,Φ:0.65,Lz:0.35,Kr:0.25,Cat:0.00},
+      {num:'IX', name:'Senaryo B',      desc:'alternatif yol',              color:'#c49a50',λ:0.08, M:-0.15,F:0.10,Φ:0.60,Lz:0.40,Kr:0.20,Cat:0.30},
+      {num:'X',  name:'Sonuç',          desc:'her iki yolun ortak noktası', color:'#c8a448',λ:-0.15,M:0,    F:0.12,Φ:0.60,Lz:0.40,Kr:0.25,Cat:0.20},
     ]
   }
 };
@@ -1754,10 +983,947 @@ const SP=20;let spG=[],spAv=Array(N).fill(0);
 function spInit(){spG=Array.from({length:SP},()=>Array(SP).fill(0));}
 function spStep(){spG[Math.floor(SP/2)][Math.floor(SP/2)]++;let ch=true,st=0;while(ch&&st<200){ch=false;st++;for(let i=0;i<SP;i++)for(let j=0;j<SP;j++){if(spG[i][j]>=4){spG[i][j]-=4;ch=true;if(i>0)spG[i-1][j]++;if(i<SP-1)spG[i+1][j]++;if(j>0)spG[i][j-1]++;if(j<SP-1)spG[i][j+1]++;}}}spAv.shift();spAv.push(Math.min(st,50));}
 
+// ══════════════════════════════════════════════════════════════
+// YENİ FONKSİYONLAR — Genişletilmiş Motor
+// ══════════════════════════════════════════════════════════════
+
+// ── 1. ZAMAN BAZLI ENTROPİ ────────────────────────────────────
+// Günün saati, ay fazı, ve timestamp bazlı seed
+function getTimeEntropy(){
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  // Gün dilimi: gece(0-6), sabah(6-12), öğlen(12-18), akşam(18-24)
+  let dayPhase;
+  if(hour < 6) dayPhase = 'gece';       // Bilinçdışı, derin
+  else if(hour < 12) dayPhase = 'sabah'; // Başlangıç, netlik
+  else if(hour < 18) dayPhase = 'ogle';  // Eylem, güç
+  else dayPhase = 'aksam';               // Yansıma, kapanış
+  
+  // Saat bazlı sinüs dalgası (0-1 arası)
+  const hourWave = (Math.sin((hour + minute/60) * Math.PI / 12) + 1) / 2;
+  
+  // Timestamp entropi (son 3 hane)
+  const tsEntropy = (Date.now() % 1000) / 1000;
+  
+  return { dayPhase, hourWave, tsEntropy };
+}
+
+// Ay Fazı Hesaplama (basit algoritma)
+function getMoonPhase(){
+  const now = new Date();
+  // Bilinen yeni ay: 6 Ocak 2000
+  const knownNewMoon = new Date(2000, 0, 6, 18, 14);
+  const lunarCycle = 29.53058867; // gün
+  const daysSince = (now - knownNewMoon) / (1000 * 60 * 60 * 24);
+  const phase = (daysSince % lunarCycle) / lunarCycle; // 0-1 arası
+  
+  // Faz isimleri
+  let phaseName, phaseEmoji;
+  if(phase < 0.0625)      { phaseName = 'yeniAy';       phaseEmoji = '🌑'; }
+  else if(phase < 0.1875) { phaseName = 'hilalBuyuyen'; phaseEmoji = '🌒'; }
+  else if(phase < 0.3125) { phaseName = 'ilkDordun';    phaseEmoji = '🌓'; }
+  else if(phase < 0.4375) { phaseName = 'giberBuyuyen'; phaseEmoji = '🌔'; }
+  else if(phase < 0.5625) { phaseName = 'dolunay';      phaseEmoji = '🌕'; }
+  else if(phase < 0.6875) { phaseName = 'giberAzalan';  phaseEmoji = '🌖'; }
+  else if(phase < 0.8125) { phaseName = 'sonDordun';    phaseEmoji = '🌗'; }
+  else if(phase < 0.9375) { phaseName = 'hilalAzalan';  phaseEmoji = '🌘'; }
+  else                    { phaseName = 'yeniAy';       phaseEmoji = '🌑'; }
+  
+  // Ay etkisi: Dolunay = yüksek enerji, yeni ay = içe dönük
+  const moonIntensity = Math.sin(phase * Math.PI * 2) * 0.5 + 0.5;
+  
+  return { phase, phaseName, phaseEmoji, moonIntensity };
+}
+
+// ── 2. ÇEKİM RİTMİ / TEMPO ────────────────────────────────────
+let lastDrawTime = 0;
+let drawTempos = []; // Son 5 çekimin temposu
+
+function getDrawTempo(){
+  const now = Date.now();
+  if(lastDrawTime === 0){
+    lastDrawTime = now;
+    return { tempo: 'normal', delta: 0, element: null };
+  }
+  
+  const delta = (now - lastDrawTime) / 1000; // saniye
+  lastDrawTime = now;
+  
+  // Son 5 tempoyu tut
+  drawTempos.push(delta);
+  if(drawTempos.length > 5) drawTempos.shift();
+  
+  // Ortalama tempo
+  const avgTempo = drawTempos.reduce((a,b) => a+b, 0) / drawTempos.length;
+  
+  // Tempo kategorisi ve element bias
+  let tempo, element, tempoScore;
+  if(avgTempo < 1.5){
+    tempo = 'cokHizli';   // < 1.5 saniye
+    element = 'ates';      // Ateş/Kılıç — impulsif
+    tempoScore = 0.9;
+  } else if(avgTempo < 3){
+    tempo = 'hizli';
+    element = 'hava';      // Hava — düşünceli ama hızlı
+    tempoScore = 0.7;
+  } else if(avgTempo < 6){
+    tempo = 'normal';
+    element = null;        // Dengeli
+    tempoScore = 0.5;
+  } else if(avgTempo < 12){
+    tempo = 'yavas';
+    element = 'su';        // Su — duygusal, düşünceli
+    tempoScore = 0.3;
+  } else {
+    tempo = 'cokYavas';
+    element = 'toprak';    // Toprak — temkinli
+    tempoScore = 0.1;
+  }
+  
+  return { tempo, delta, avgTempo, element, tempoScore };
+}
+
+// ── 3. SIRA HAFIZASI (Sequence Memory) ────────────────────────
+// Önceki kartların etkisi sonrakilere taşınır
+function getSequenceMemory(){
+  if(SPREAD.length === 0) return { majorStreak: 0, suitStreak: {}, lastSuit: null, bias: null };
+  
+  // Major Arcana streak
+  let majorStreak = 0;
+  for(let i = SPREAD.length - 1; i >= 0; i--){
+    if(SPREAD[i].arcana === 'Büyük Arcana') majorStreak++;
+    else break;
+  }
+  
+  // Suit streak (son 3 kart)
+  const recentSuits = {};
+  const last3 = SPREAD.slice(-3);
+  last3.forEach(c => {
+    if(c.arcana === 'Küçük Arcana'){
+      const suit = c.name.split(' ').pop(); // "As Değnekler" → "Değnekler"
+      recentSuits[suit] = (recentSuits[suit] || 0) + 1;
+    }
+  });
+  
+  // Dominant suit (2+ tekrar)
+  let dominantSuit = null;
+  Object.entries(recentSuits).forEach(([suit, count]) => {
+    if(count >= 2) dominantSuit = suit;
+  });
+  
+  // Bias hesapla
+  let bias = null;
+  if(majorStreak >= 3){
+    bias = { type: 'forceMinor', reason: '3+ Major üst üste — Minor\'a kayış' };
+  } else if(dominantSuit){
+    bias = { type: 'avoidSuit', suit: dominantSuit, reason: `${dominantSuit} baskın — farklı suit\'e kayış` };
+  }
+  
+  // Son kartın suit'i
+  const lastCard = SPREAD[SPREAD.length - 1];
+  let lastSuit = null;
+  if(lastCard && lastCard.arcana === 'Küçük Arcana'){
+    lastSuit = lastCard.name.split(' ').pop();
+  }
+  
+  return { majorStreak, suitStreak: recentSuits, lastSuit, dominantSuit, bias };
+}
+
+// ── 4. AÇILIM İÇİ RESONANS ────────────────────────────────────
+// Çekilen kartlar arasındaki uyum/gerilim
+const ELEMENT_MAP = {
+  'Değnekler': 'ates', 'Kupalar': 'su', 'Kılıçlar': 'hava', 'Pentaküller': 'toprak'
+};
+const ELEMENT_HARMONY = {
+  'ates-hava': 'uyum',    'su-toprak': 'uyum',
+  'ates-su': 'gerilim',   'hava-toprak': 'gerilim',
+  'ates-toprak': 'notr',  'su-hava': 'notr'
+};
+
+function getSpreadResonance(){
+  if(SPREAD.length < 2) return { harmony: 0, tension: 0, elements: {}, numbers: {} };
+  
+  // Element sayımı
+  const elements = { ates: 0, su: 0, hava: 0, toprak: 0, major: 0 };
+  const numbers = {};
+  
+  SPREAD.forEach(c => {
+    if(c.arcana === 'Büyük Arcana'){
+      elements.major++;
+    } else {
+      const suit = c.name.split(' ').pop();
+      const el = ELEMENT_MAP[suit];
+      if(el) elements[el]++;
+    }
+    
+    // Sayı çıkarma (As=1, İki=2, ... Kral=14)
+    const numMatch = c.name.match(/^(As|İki|Üç|Dört|Beş|Altı|Yedi|Sekiz|Dokuz|On|Paж|Şövalye|Kraliçe|Kral)/);
+    if(numMatch){
+      const numMap = {As:1,İki:2,Üç:3,Dört:4,Beş:5,Altı:6,Yedi:7,Sekiz:8,Dokuz:9,On:10,Paж:11,Şövalye:12,Kraliçe:13,Kral:14};
+      const num = numMap[numMatch[1]];
+      if(num) numbers[num] = (numbers[num] || 0) + 1;
+    }
+  });
+  
+  // Uyum ve gerilim skoru
+  let harmony = 0, tension = 0;
+  const elKeys = ['ates', 'su', 'hava', 'toprak'];
+  for(let i = 0; i < elKeys.length; i++){
+    for(let j = i+1; j < elKeys.length; j++){
+      const key = `${elKeys[i]}-${elKeys[j]}`;
+      const rel = ELEMENT_HARMONY[key];
+      const count = elements[elKeys[i]] * elements[elKeys[j]];
+      if(rel === 'uyum') harmony += count;
+      else if(rel === 'gerilim') tension += count;
+    }
+  }
+  
+  // Tekrarlayan sayılar
+  const repeatedNums = Object.entries(numbers).filter(([n, c]) => c >= 2).map(([n, c]) => ({ num: parseInt(n), count: c }));
+  
+  return { harmony, tension, elements, numbers, repeatedNums };
+}
+
+// ── 5. KART ISI HARİTASI (localStorage) ────────────────────────
+// Kullanıcının geçmişte çektiği kartları takip eder
+const HEAT_KEY = 'tarot_card_heat';
+
+function loadCardHeat(){
+  try {
+    const data = localStorage.getItem(HEAT_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch(e){ return {}; }
+}
+
+function saveCardHeat(heat){
+  try {
+    localStorage.setItem(HEAT_KEY, JSON.stringify(heat));
+  } catch(e){}
+}
+
+function recordCardDraw(cardName){
+  const heat = loadCardHeat();
+  heat[cardName] = (heat[cardName] || 0) + 1;
+  heat._total = (heat._total || 0) + 1;
+  heat._lastDraw = Date.now();
+  saveCardHeat(heat);
+}
+
+function getCardHeat(cardName){
+  const heat = loadCardHeat();
+  return {
+    count: heat[cardName] || 0,
+    total: heat._total || 0,
+    frequency: heat._total ? (heat[cardName] || 0) / heat._total : 0
+  };
+}
+
+function getColdCards(){
+  // Hiç çekilmemiş veya az çekilmiş kartları bul
+  const heat = loadCardHeat();
+  const allCards = DECK.map(c => c.n);
+  const cold = allCards.filter(name => !heat[name] || heat[name] < 2);
+  return cold;
+}
+
+function getHotCards(){
+  // En çok çekilen 5 kart
+  const heat = loadCardHeat();
+  const sorted = Object.entries(heat)
+    .filter(([k, v]) => !k.startsWith('_'))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  return sorted.map(([name, count]) => ({ name, count }));
+}
+
+// ══════════════════════════════════════════════════════════════
+// POZİSYON PROFİLLERİ — Hangi fonksiyon hangi pozisyonda baskın
+// ══════════════════════════════════════════════════════════════
+const POSITION_PROFILES = {
+  // Profil: [birincil, ikincil, üçüncül] fonksiyon ağırlıkları
+  'sen':      { primary: 'phi',     secondary: 'lorenz',  tertiary: null,      weights: { phi: 0.5, lorenz: 0.3, time: 0.2 } },
+  'partner':  { primary: 'rg',      secondary: 'kuramoto', tertiary: null,     weights: { rg: 0.5, kuramoto: 0.3, tempo: 0.2 } },
+  'iliski':   { primary: 'kuramoto', secondary: 'phi',    tertiary: 'rg',      weights: { kuramoto: 0.4, phi: 0.3, rg: 0.2, resonance: 0.1 } },
+  'engel':    { primary: 'cat',     secondary: 'fe',      tertiary: null,      weights: { cat: 0.5, fe: 0.35, sequence: 0.15 } },
+  'mesaj':    { primary: 'phi',     secondary: 'lambda',  tertiary: 'moon',    weights: { phi: 0.4, lambda: 0.3, moon: 0.2, time: 0.1 } },
+  'karma':    { primary: 'phi',     secondary: 'lorenz',  tertiary: 'lambda',  weights: { phi: 0.4, lorenz: 0.3, lambda: 0.2, heat: 0.1 } },
+  'senaryo':  { primary: 'rg',      secondary: 'kuramoto', tertiary: 'sandpile', weights: { rg: 0.35, kuramoto: 0.3, sandpile: 0.2, tempo: 0.15 } },
+  'gelecek':  { primary: 'kuramoto', secondary: 'sandpile', tertiary: 'lorenz', weights: { kuramoto: 0.4, sandpile: 0.3, lorenz: 0.2, moon: 0.1 } },
+  'destek':   { primary: 'lambda',  secondary: 'phi',     tertiary: null,      weights: { lambda: 0.5, phi: 0.3, resonance: 0.2 } },
+  'gizli':    { primary: 'lorenz',  secondary: 'cat',     tertiary: 'phi',     weights: { lorenz: 0.4, cat: 0.3, phi: 0.2, moon: 0.1 } },
+  'sonuc':    { primary: 'phi',     secondary: 'kuramoto', tertiary: 'rg',     weights: { phi: 0.35, kuramoto: 0.3, rg: 0.2, resonance: 0.15 } },
+  'default':  { primary: 'phi',     secondary: 'lambda',  tertiary: null,      weights: { phi: 0.4, lambda: 0.3, time: 0.2, tempo: 0.1 } }
+};
+
+// Pozisyon adından profil tipi çıkar
+function getPositionProfile(posName){
+  const nameLower = posName.toLowerCase();
+  if(nameLower.includes('sen') || nameLower.includes('şu an') || nameLower.includes('mevcut')) return POSITION_PROFILES['sen'];
+  if(nameLower.includes('partner') || nameLower.includes('diğer')) return POSITION_PROFILES['partner'];
+  if(nameLower.includes('ilişki') || nameLower.includes('bağ') || nameLower.includes('birlik')) return POSITION_PROFILES['iliski'];
+  if(nameLower.includes('engel') || nameLower.includes('zorluk') || nameLower.includes('dikkat')) return POSITION_PROFILES['engel'];
+  if(nameLower.includes('mesaj') || nameLower.includes('tavsiye') || nameLower.includes('rehber')) return POSITION_PROFILES['mesaj'];
+  if(nameLower.includes('karma') || nameLower.includes('ders') || nameLower.includes('ruh')) return POSITION_PROFILES['karma'];
+  if(nameLower.includes('senaryo') || nameLower.includes('yol') || nameLower.includes('alternatif')) return POSITION_PROFILES['senaryo'];
+  if(nameLower.includes('gelecek') || nameLower.includes('yakın') || nameLower.includes('uzak')) return POSITION_PROFILES['gelecek'];
+  if(nameLower.includes('destek') || nameLower.includes('güç') || nameLower.includes('yardım')) return POSITION_PROFILES['destek'];
+  if(nameLower.includes('gizli') || nameLower.includes('bilinç') || nameLower.includes('görünmeyen')) return POSITION_PROFILES['gizli'];
+  if(nameLower.includes('sonuç') || nameLower.includes('çıktı') || nameLower.includes('final')) return POSITION_PROFILES['sonuc'];
+  return POSITION_PROFILES['default'];
+}
+
 // ── STATE ─────────────────────────────────────────────────
 let activeSpreadId='iliski';
 let SPREAD=[];
 let usedIds=new Set();
+let currentMode='motor'; // 'motor' veya 'manual'
+
+// ── MODE TOGGLE ──────────────────────────────────────────────
+function setMode(mode){
+  currentMode = mode;
+  
+  // UI güncelle
+  document.getElementById('modeMotor').classList.toggle('active', mode === 'motor');
+  document.getElementById('modeManual').classList.toggle('active', mode === 'manual');
+  document.getElementById('modeReader').classList.toggle('active', mode === 'reader');
+  document.getElementById('modeIntuition').classList.toggle('active', mode === 'intuition');
+  
+  document.getElementById('motorControls').style.display = mode === 'motor' ? 'flex' : 'none';
+  document.getElementById('manualControls').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('readerPanel').style.display = mode === 'reader' ? 'block' : 'none';
+  document.getElementById('intuitionPanel').style.display = mode === 'intuition' ? 'block' : 'none';
+  
+  // Engine görünürlüğü
+  document.querySelector('.engine').style.display = mode === 'motor' ? 'grid' : 'none';
+  
+  // Spread area ve info görünürlüğü
+  const hideSpread = mode === 'reader' || mode === 'intuition';
+  document.getElementById('spreadArea').style.display = hideSpread ? 'none' : 'block';
+  document.querySelector('.spread-info').style.display = hideSpread ? 'none' : 'flex';
+  document.getElementById('resultPanel').style.display = 'none';
+  
+  // Spread nav görünürlüğü
+  document.getElementById('spreadNav').style.display = hideSpread ? 'none' : 'flex';
+  
+  // Manuel mod için kart listesini doldur
+  if(mode === 'manual'){
+    populateCardSelect();
+    updateManualUI();
+  }
+  
+  // Sezgi modu için ephemeris yükle
+  if(mode === 'intuition'){
+    loadCurrentTransits();
+  }
+  
+  // Motor/Manuel için açılımı sıfırla
+  if(mode === 'motor' || mode === 'manual'){
+    clearSpread();
+  }
+}
+
+// ── MANUEL MOD FONKSİYONLARI ─────────────────────────────────
+function populateCardSelect(){
+  const select = document.getElementById('cardSelect');
+  if(select.options.length > 1) return; // Zaten doldurulmuş
+  
+  // Major Arcana
+  const majorGroup = document.createElement('optgroup');
+  majorGroup.label = '✦ Büyük Arcana';
+  MAJOR.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.n;
+    opt.textContent = `${m.s} ${m.n}`;
+    majorGroup.appendChild(opt);
+  });
+  select.appendChild(majorGroup);
+  
+  // Minor Arcana - Suits
+  SUITS.forEach(suit => {
+    const group = document.createElement('optgroup');
+    group.label = `${suit.icon} ${suit.name}`;
+    PIPS.forEach(pip => {
+      const cardName = `${pip} ${suit.name}`;
+      const opt = document.createElement('option');
+      opt.value = cardName;
+      opt.textContent = cardName;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  });
+}
+
+function updateManualUI(){
+  const S = SPREADS[activeSpreadId];
+  const i = SPREAD.length;
+  const total = S.positions.length;
+  
+  document.getElementById('manualProg').textContent = `${i} / ${total}`;
+  
+  if(i >= total){
+    document.getElementById('manualPosName').textContent = 'Tamamlandı';
+    document.querySelector('.btn-add-card').disabled = true;
+  } else {
+    const P = S.positions[i];
+    document.getElementById('manualPosName').textContent = `${P.num} · ${P.name}`;
+    document.querySelector('.btn-add-card').disabled = false;
+  }
+  
+  // Kullanılmış kartları disable et
+  const select = document.getElementById('cardSelect');
+  Array.from(select.options).forEach(opt => {
+    if(opt.value){
+      opt.disabled = usedIds.has(opt.value);
+      if(opt.disabled){
+        opt.textContent = opt.textContent.replace(' ✓', '') + ' ✓';
+      }
+    }
+  });
+  
+  // Seçimi sıfırla
+  select.value = '';
+  document.getElementById('reverseCheck').checked = false;
+}
+
+function addManualCard(){
+  const S = SPREADS[activeSpreadId];
+  if(SPREAD.length >= S.positions.length) return;
+  
+  const select = document.getElementById('cardSelect');
+  const cardName = select.value;
+  if(!cardName){
+    alert('Lütfen bir kart seç');
+    return;
+  }
+  
+  const reversed = document.getElementById('reverseCheck').checked;
+  const P = S.positions[SPREAD.length];
+  
+  // Kartı bul
+  const deckCard = DECK.find(c => c.n === cardName);
+  if(!deckCard){
+    alert('Kart bulunamadı');
+    return;
+  }
+  
+  // Zaten kullanılmış mı?
+  if(usedIds.has(cardName)){
+    alert('Bu kart zaten kullanıldı');
+    return;
+  }
+  
+  usedIds.add(cardName);
+  
+  const card = {
+    name: deckCard.n,
+    icon: deckCard.s,
+    arcana: deckCard.a,
+    reversed,
+    P,
+    manual: true // Manuel giriş flag'i
+  };
+  
+  SPREAD.push(card);
+  renderSpread();
+  updateNext();
+  updateManualUI();
+  
+  // Isı haritasına kaydet
+  recordCardDraw(cardName);
+  
+  if(SPREAD.length === S.positions.length){
+    setTimeout(showResult, 600);
+  }
+}
+
+// ── OKUYUCU MOD FONKSİYONLARI ─────────────────────────────────
+function clearReader(){
+  document.getElementById('readerInput').value = '';
+  document.getElementById('readerResult').style.display = 'none';
+  document.getElementById('readerResultContent').innerHTML = '';
+}
+
+async function interpretReader(){
+  const input = document.getElementById('readerInput').value.trim();
+  if(!input){
+    alert('Lütfen kartlarını yaz');
+    return;
+  }
+  
+  const btn = document.querySelector('.btn-reader-interpret');
+  const resultDiv = document.getElementById('readerResult');
+  const contentDiv = document.getElementById('readerResultContent');
+  
+  btn.disabled = true;
+  btn.textContent = 'Yorumlanıyor...';
+  resultDiv.style.display = 'block';
+  contentDiv.innerHTML = '<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
+  resultDiv.scrollIntoView({behavior:'smooth', block:'nearest'});
+  
+  // Kart bilgilerini zenginleştir
+  const enrichedInput = enrichCardInput(input);
+  
+  const userMsg = `Fiziksel destesinden çekilen tarot açılımı:
+
+${enrichedInput}
+
+---
+
+Bu açılımı derinlemesine yorumla. Kullanıcı kartlarını kendi fiziksel destesinden, kendi elleriyle çekti — bu temas önemli.
+
+Yorum kuralları:
+- Her kart için karmik ve ruhsal katmanı aç
+- Kartların birbiriyle nasıl konuştuğunu göster
+- Ters kartları "bloke enerji" veya "içsel çalışma" olarak oku
+- Sonda genel sentez ve pratik bir soru
+- Minimum 500 kelime
+- Türkçe, witch tonu, sıcak, çıkış yolu gösteren`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        auth: localStorage.getItem('tarot_auth') || '',
+        system: SYSTEM_PROMPT,
+        messages: [{role: 'user', content: userMsg}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content && data.content[0] && data.content[0].text;
+    
+    if(text){
+      const html = text
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^---+$/gm, '<hr style="border:none;border-top:0.5px solid var(--rim);margin:1rem 0;">')
+        .split('\n\n').map(p => p.trim() ? '<p>' + p.replace(/\n/g, ' ') + '</p>' : '').join('');
+      contentDiv.innerHTML = html;
+    } else {
+      contentDiv.innerHTML = '<div class="interp-error">Hata: ' + (data.error?.message || 'Bilinmeyen') + '</div>';
+    }
+  } catch(e) {
+    contentDiv.innerHTML = '<div class="interp-error">Bağlantı hatası: ' + e.message + '</div>';
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Tekrar Yorumla ✦';
+}
+
+// Girilen metindeki kartları tanı ve bilgi ekle
+function enrichCardInput(input){
+  let enriched = input;
+  
+  // Tüm kart isimlerini kontrol et
+  const allCardNames = [
+    ...MAJOR.map(m => m.n),
+    ...SUITS.flatMap(s => PIPS.map(p => `${p} ${s.name}`))
+  ];
+  
+  // Her kartı bul ve bilgi ekle
+  allCardNames.forEach(cardName => {
+    const regex = new RegExp(`(${cardName})(?:\\s*\\(?(ters|düz)?\\)?)?`, 'gi');
+    const match = input.match(regex);
+    if(match){
+      const cardInfo = CARD_DB[cardName];
+      if(cardInfo){
+        const isReversed = /ters/i.test(match[0]);
+        const meaning = isReversed ? cardInfo.reversed : cardInfo.upright;
+        const extra = `\n  [${cardName}${isReversed ? ' TERS' : ''}: ${meaning} | Karmik: ${cardInfo.karmic}]`;
+        // Sadece not olarak ekle, metni değiştirme
+        enriched += extra;
+      }
+    }
+  });
+  
+  return enriched;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SEZGİ MODU FONKSİYONLARI
+// ══════════════════════════════════════════════════════════════
+
+// Güncel transit verisi (client-side ephemeris hesabı)
+let currentTransits = null;
+
+// Basit ephemeris hesaplaması (astronomia yerine basit formüller)
+function calculatePlanetPositions(){
+  const now = new Date();
+  const jd = getJulianDate(now);
+  
+  // Basit gezegen pozisyon hesabı (yaklaşık)
+  const planets = {
+    sun: getSunPosition(jd),
+    moon: getMoonPosition(jd),
+    mercury: getPlanetPosition(jd, 87.969, 0.387),
+    venus: getPlanetPosition(jd, 224.701, 0.723),
+    mars: getPlanetPosition(jd, 686.98, 1.524),
+    jupiter: getPlanetPosition(jd, 4332.59, 5.203),
+    saturn: getPlanetPosition(jd, 10759.22, 9.537)
+  };
+  
+  return planets;
+}
+
+function getJulianDate(date){
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate() + date.getHours()/24;
+  
+  let jy = y, jm = m;
+  if(m <= 2){ jy--; jm += 12; }
+  
+  const a = Math.floor(jy / 100);
+  const b = 2 - a + Math.floor(a / 4);
+  
+  return Math.floor(365.25 * (jy + 4716)) + Math.floor(30.6001 * (jm + 1)) + d + b - 1524.5;
+}
+
+function getSunPosition(jd){
+  const n = jd - 2451545.0;
+  const L = (280.460 + 0.9856474 * n) % 360;
+  const g = ((357.528 + 0.9856003 * n) % 360) * Math.PI / 180;
+  const lambda = L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g);
+  return { longitude: ((lambda % 360) + 360) % 360, name: 'Güneş', symbol: '☉' };
+}
+
+function getMoonPosition(jd){
+  const n = jd - 2451545.0;
+  const L = (218.316 + 13.176396 * n) % 360;
+  const M = ((134.963 + 13.064993 * n) % 360) * Math.PI / 180;
+  const F = ((93.272 + 13.229350 * n) % 360) * Math.PI / 180;
+  const lambda = L + 6.289 * Math.sin(M);
+  return { longitude: ((lambda % 360) + 360) % 360, name: 'Ay', symbol: '☽' };
+}
+
+function getPlanetPosition(jd, period, distance){
+  const n = jd - 2451545.0;
+  const M = ((n / period) * 360) % 360;
+  // Basit yaklaşım - gerçek ephemeris için Swiss Ephemeris gerekir
+  const longitude = (M + Math.random() * 5 - 2.5 + 360) % 360; // ±2.5° hata payı
+  return { longitude };
+}
+
+function getZodiacSign(longitude){
+  const signs = [
+    {name: 'Koç', symbol: '♈', element: 'Ateş'},
+    {name: 'Boğa', symbol: '♉', element: 'Toprak'},
+    {name: 'İkizler', symbol: '♊', element: 'Hava'},
+    {name: 'Yengeç', symbol: '♋', element: 'Su'},
+    {name: 'Aslan', symbol: '♌', element: 'Ateş'},
+    {name: 'Başak', symbol: '♍', element: 'Toprak'},
+    {name: 'Terazi', symbol: '♎', element: 'Hava'},
+    {name: 'Akrep', symbol: '♏', element: 'Su'},
+    {name: 'Yay', symbol: '♐', element: 'Ateş'},
+    {name: 'Oğlak', symbol: '♑', element: 'Toprak'},
+    {name: 'Kova', symbol: '♒', element: 'Hava'},
+    {name: 'Balık', symbol: '♓', element: 'Su'}
+  ];
+  const idx = Math.floor(longitude / 30);
+  const degree = Math.floor(longitude % 30);
+  return { ...signs[idx], degree };
+}
+
+function loadCurrentTransits(){
+  const cosmicDiv = document.getElementById('cosmicNow');
+  
+  try {
+    const planets = calculatePlanetPositions();
+    currentTransits = planets;
+    
+    const planetData = [
+      { key: 'sun', name: 'Güneş', symbol: '☉' },
+      { key: 'moon', name: 'Ay', symbol: '☽' },
+      { key: 'mercury', name: 'Merkür', symbol: '☿' },
+      { key: 'venus', name: 'Venüs', symbol: '♀' },
+      { key: 'mars', name: 'Mars', symbol: '♂' },
+      { key: 'jupiter', name: 'Jüpiter', symbol: '♃' },
+      { key: 'saturn', name: 'Satürn', symbol: '♄' }
+    ];
+    
+    let html = '<div class="cosmic-now-header">Şu An Gökyüzü</div><div class="cosmic-now-grid">';
+    
+    planetData.forEach(p => {
+      const pos = planets[p.key];
+      const sign = getZodiacSign(pos.longitude);
+      html += `
+        <div class="cosmic-planet">
+          <span class="cosmic-planet-icon">${p.symbol}</span>
+          <span>${p.name}</span>
+          <span class="cosmic-planet-pos">${sign.symbol} ${sign.degree}°</span>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    
+    // Ay fazı ekle
+    const moon = getMoonPhase();
+    html += `<div style="margin-top:10px;font-size:12px;color:var(--mist);">
+      ${moon.phaseEmoji} ${moon.phaseName.replace(/([A-Z])/g, ' $1').trim()}
+    </div>`;
+    
+    cosmicDiv.innerHTML = html;
+  } catch(e) {
+    cosmicDiv.innerHTML = '<div class="cosmic-now-header">Şu An Gökyüzü</div><div style="color:var(--fog);font-size:12px;">Hesaplanamadı</div>';
+  }
+}
+
+// Ses Kaydı
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+function toggleVoiceRecord(){
+  if(isRecording){
+    stopVoiceRecord();
+  } else {
+    startVoiceRecord();
+  }
+}
+
+async function startVoiceRecord(){
+  const btn = document.getElementById('voiceBtn');
+  const status = document.getElementById('voiceStatus');
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    
+    mediaRecorder.onstop = async () => {
+      status.textContent = 'Yazıya çevriliyor...';
+      status.className = 'voice-status transcribing';
+      
+      // Web Speech API ile transcript
+      transcribeAudio();
+    };
+    
+    mediaRecorder.start();
+    isRecording = true;
+    btn.classList.add('recording');
+    btn.querySelector('.voice-label').textContent = 'Durdur';
+    status.textContent = '🔴 Kayıt yapılıyor...';
+    
+  } catch(e) {
+    status.textContent = 'Mikrofon erişimi reddedildi';
+    console.error(e);
+  }
+}
+
+function stopVoiceRecord(){
+  const btn = document.getElementById('voiceBtn');
+  
+  if(mediaRecorder && isRecording){
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    isRecording = false;
+    btn.classList.remove('recording');
+    btn.querySelector('.voice-label').textContent = 'Kayıt Başlat';
+  }
+}
+
+function transcribeAudio(){
+  const status = document.getElementById('voiceStatus');
+  const input = document.getElementById('intuitionInput');
+  
+  // Web Speech API
+  if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'tr-TR';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for(let i = 0; i < e.results.length; i++){
+        transcript += e.results[i][0].transcript + ' ';
+      }
+      input.value = (input.value + ' ' + transcript).trim();
+      status.textContent = '✓ Yazıya çevrildi';
+      status.className = 'voice-status';
+    };
+    
+    recognition.onerror = (e) => {
+      status.textContent = 'Ses tanıma hatası: ' + e.error;
+      status.className = 'voice-status';
+    };
+    
+    recognition.start();
+    
+    // 5 saniye sonra durdur
+    setTimeout(() => recognition.stop(), 5000);
+    
+  } else {
+    status.textContent = 'Tarayıcı ses tanımayı desteklemiyor';
+    status.className = 'voice-status';
+  }
+}
+
+function clearIntuition(){
+  document.getElementById('intuitionInput').value = '';
+  document.getElementById('intuitionAnalysis').style.display = 'none';
+  document.getElementById('intuitionResult').style.display = 'none';
+  document.getElementById('voiceStatus').textContent = '';
+}
+
+async function analyzeIntuition(){
+  const input = document.getElementById('intuitionInput').value.trim();
+  if(!input){
+    alert('Lütfen durumunu anlat');
+    return;
+  }
+  
+  const btn = document.querySelector('.btn-intuition-analyze');
+  const analysisDiv = document.getElementById('intuitionAnalysis');
+  const resultDiv = document.getElementById('intuitionResult');
+  const resultContent = document.getElementById('intuitionResultContent');
+  
+  btn.disabled = true;
+  btn.textContent = 'Analiz ediliyor...';
+  
+  // Transit bilgisini hazırla
+  let transitInfo = '';
+  if(currentTransits){
+    const planetData = [
+      { key: 'sun', name: 'Güneş' },
+      { key: 'moon', name: 'Ay' },
+      { key: 'mercury', name: 'Merkür' },
+      { key: 'venus', name: 'Venüs' },
+      { key: 'mars', name: 'Mars' },
+      { key: 'jupiter', name: 'Jüpiter' },
+      { key: 'saturn', name: 'Satürn' }
+    ];
+    
+    transitInfo = '\n\nGÜNCEL TRANSİTLER:\n';
+    planetData.forEach(p => {
+      const pos = currentTransits[p.key];
+      const sign = getZodiacSign(pos.longitude);
+      transitInfo += `${p.name}: ${sign.name} ${sign.degree}°\n`;
+    });
+    
+    const moon = getMoonPhase();
+    transitInfo += `Ay Fazı: ${moon.phaseName}\n`;
+  }
+  
+  // Hava durumu (basit - kullanıcı konumundan)
+  const time = getTimeEntropy();
+  const timeInfo = `\nZAMAN: ${time.dayPhase} (${new Date().toLocaleString('tr-TR')})\n`;
+  
+  const analysisPrompt = `Kullanıcı tarot danışmanlığı için durumunu anlattı. Bağlamı analiz et ve özel bir okuma öner.
+
+KULLANICI METNİ:
+${input}
+${transitInfo}
+${timeInfo}
+
+GÖREV:
+1. Metinden şunları çıkar:
+   - Doğum bilgisi (burç, yıl varsa)
+   - Duygusal ton (öfke, korku, umut, kaygı vb.)
+   - Ana tema (ilişki, iş, aile, sağlık, karar vb.)
+   - Anahtar kelimeler
+
+2. Transitlere göre:
+   - Hangi gezegenler bu durumu tetikliyor olabilir?
+   - Hangi evler aktif?
+
+3. Özel açılım öner:
+   - Kaç kart?
+   - Pozisyon isimleri (duruma özel)
+   - Hangi suit/arcana vurgulanmalı?
+
+4. Sonra TAM BİR TAROT YORUMU yaz:
+   - Duruma özel kartlar seç (kendin belirle, 5-7 kart)
+   - Her kartı durumla bağlantılı yorumla
+   - Transitlerle ilişkilendir
+   - Karmik katmanı aç
+   - Pratik öneriler sun
+   - Minimum 600 kelime
+
+JSON formatında bağlam analizi + ardından serbest metin yorum.`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        auth: localStorage.getItem('tarot_auth') || '',
+        system: SYSTEM_PROMPT + '\n\nSen aynı zamanda bir astrolojik bağlam analistiysin. Transitleri ve kullanıcının durumunu birleştirerek kişiselleştirilmiş tarot yorumu yaparsın.',
+        messages: [{role: 'user', content: analysisPrompt}]
+      })
+    });
+    
+    const data = await res.json();
+    const text = data.content && data.content[0] && data.content[0].text;
+    
+    if(text){
+      // Analiz bölümünü göster
+      analysisDiv.style.display = 'block';
+      
+      // Basit parsing - JSON varsa ayır
+      let analysisText = '';
+      let interpretationText = text;
+      
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if(jsonMatch){
+        try {
+          const analysis = JSON.parse(jsonMatch[0]);
+          document.getElementById('analysisContext').innerHTML = `
+            ${analysis.tema ? `<span class="analysis-tag">${analysis.tema}</span>` : ''}
+            ${analysis.duygu ? `<span class="analysis-tag">${analysis.duygu}</span>` : ''}
+            ${analysis.burc ? `<span class="analysis-tag">${analysis.burc}</span>` : ''}
+            ${analysis.anahtar_kelimeler ? analysis.anahtar_kelimeler.map(k => `<span class="analysis-tag">${k}</span>`).join('') : ''}
+          `;
+          document.getElementById('analysisSuggestion').innerHTML = analysis.acilim_onerisi || 'Genel okuma';
+          document.getElementById('analysisTransits').innerHTML = analysis.transit_etki || 'Genel transit etkisi';
+          interpretationText = text.replace(jsonMatch[0], '').trim();
+        } catch(e) {
+          // JSON parse edilemedi, tüm metni yorum olarak göster
+          document.getElementById('analysisContext').innerHTML = '<span class="analysis-tag">Analiz edildi</span>';
+          document.getElementById('analysisSuggestion').innerHTML = 'Kişiselleştirilmiş okuma';
+          document.getElementById('analysisTransits').innerHTML = transitInfo.replace(/\n/g, '<br>');
+        }
+      } else {
+        document.getElementById('analysisContext').innerHTML = '<span class="analysis-tag">Bağlam analizi yapıldı</span>';
+        document.getElementById('analysisSuggestion').innerHTML = 'Duruma özel okuma';
+        document.getElementById('analysisTransits').innerHTML = transitInfo.replace(/\n/g, '<br>');
+      }
+      
+      // Yorum göster
+      resultDiv.style.display = 'block';
+      const html = interpretationText
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .split('\n\n').map(p => p.trim() ? '<p>' + p.replace(/\n/g, ' ') + '</p>' : '').join('');
+      resultContent.innerHTML = html;
+      
+      resultDiv.scrollIntoView({behavior:'smooth', block:'nearest'});
+      
+    } else {
+      resultDiv.style.display = 'block';
+      resultContent.innerHTML = '<div class="interp-error">Hata: ' + (data.error?.message || 'Bilinmeyen') + '</div>';
+    }
+    
+  } catch(e) {
+    resultDiv.style.display = 'block';
+    resultContent.innerHTML = '<div class="interp-error">Bağlantı hatası: ' + e.message + '</div>';
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'Tekrar Analiz Et ✦';
+}
 
 function setSpread(id){
   activeSpreadId=id;
@@ -1768,6 +1934,7 @@ function setSpread(id){
   document.getElementById('spreadNameBig').textContent=S.name;
   document.getElementById('spreadDescSmall').textContent=S.desc;
   updateNext();
+  if(currentMode === 'manual') updateManualUI();
 }
 
 function updateNext(){
@@ -1788,62 +1955,183 @@ function updateNext(){
 }
 
 // ── DECK & MAPPING ────────────────────────────────────────
-function findCard(targetId,isMajor){
-  const pool=DECK.filter(c=>c.major===isMajor&&!usedIds.has(c.id));
-  if(!pool.length){const any=DECK.filter(c=>!usedIds.has(c.id));return any.length?any[0]:null;}
-  // En yakın kart yerine: hedef etrafında küçük bir pencereden rastgele seç
-  const window=pool.filter(c=>Math.abs(c.id-targetId)<=3);
-  const candidates=window.length>=2?window:pool.slice(0,Math.min(5,pool.length));
-  return candidates[Math.floor(Math.random()*candidates.length)];
+function findCard(targetId, isMajor){
+  // Kullanılmamış kartları filtrele
+  const pool = DECK.filter(c => c.major === isMajor && !usedIds.has(c.id));
+  
+  // Pool boşsa, kalan herhangi bir kart
+  if(!pool.length){
+    const any = DECK.filter(c => !usedIds.has(c.id));
+    if(!any.length) return null;
+    // Rastgele seç
+    return any[Math.floor(Math.random() * any.length)];
+  }
+  
+  // Hedef ID'ye yakın kartları bul, ama biraz rastgelelik ekle
+  // Weighted random selection: yakın kartlar daha olası
+  const weights = pool.map(c => {
+    const dist = Math.abs(c.id - targetId);
+    // Mesafe 0 ise ağırlık 10, mesafe arttıkça azalır
+    return Math.max(1, 10 - dist * 0.5);
+  });
+  
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let rand = Math.random() * totalWeight;
+  
+  for(let i = 0; i < pool.length; i++){
+    rand -= weights[i];
+    if(rand <= 0) return pool[i];
+  }
+  
+  return pool[pool.length - 1];
 }
 
 function mapCard(P){
-  const lambda=lyLambda,mag=rgMag()+P.M,phi=phiVal(),lzN=(lz-10)/30,r=kR,dw=catDW();
-
-  // Major/Minor: Lyapunov
-  const isMajor=lambda>P.λ;
-
-  // Ters/Düz: FreeEnergy + Catastrophe + Kuramoto
-  const reversed=(feF>P.F)||(dw&&Math.random()<P.Cat)||(r<0.3&&Math.random()<P.Kr);
-
-  // X FACTOR — Kuramoto eşik geçişi: r>0.8 ise senkronizasyon patlaması
-  const kuraX = r>0.8 ? (r-0.8)*2.5 : r*0.2;
-
-  // X FACTOR — Felaket çift kuyu: catU<-0.5 ise derin negatif çekim
-  const catX = catU < -0.5 ? Math.abs(catU+0.5)*0.8 : (catU+2)/4*0.15;
-
-  // X FACTOR — Kum yığını çığ: büyük avalanche ani sıçrama yaratır
-  const sandX = spAv[N-1]>20 ? (spAv[N-1]-20)/30 : spAv[N-1]/50*0.15;
-
-  // Suit: RG + Lorenz + Kuramoto(X) + lyX + Sand(X)
-  const suitRaw=(
-    (mag+1)*0.28+
-    lzN*0.22+
-    kuraX*0.25+     // Kuramoto eşik etkisi güçlendi
-    lyX*0.15+
-    sandX*0.10
-  );
-  const suitNorm=Math.min(1,Math.max(0,suitRaw/1.3));
-  const si=Math.min(3,Math.max(0,Math.floor(suitNorm*4)));
-
-  // Kart numarası: Φ + Lorenz + Kuramoto(X) + Cat(X) + Sand(X) + lyX
-  const majorNoise=isMajor?(Math.random()-0.5)*0.3:0;
-  const nPhi=Math.min(1,Math.max(0,phi/3));
-  const nIdx=Math.min(1,Math.max(0,
-    nPhi*P.Φ+
-    lzN*P.Lz*0.25+
-    kuraX*P.Kr*0.30+   // Kuramoto X factor
-    catX*0.20+          // Felaket X factor
-    sandX*0.15+         // Kum çığı X factor
-    (lyX-0.3)*0.10+
-    majorNoise
+  // ═══ TEK FONKSİYONLAR ═══
+  const lambda = lyLambda;
+  const mag = rgMag() + P.M;
+  const phi = phiVal();
+  const lzN = (lz - 10) / 30;
+  const r = kR;
+  const dw = catDW();
+  const avgSp = spAv.reduce((a,b) => a+b, 0) / spAv.length;
+  
+  // ═══ YENİ FONKSİYONLAR ═══
+  const timeData = getTimeEntropy();
+  const moonData = getMoonPhase();
+  const tempoData = getDrawTempo();
+  const seqData = getSequenceMemory();
+  const resData = getSpreadResonance();
+  
+  // ═══ POZİSYON PROFİLİ ═══
+  const profile = getPositionProfile(P.name);
+  const W = profile.weights;
+  
+  // ═══ MAJOR vs MINOR ARCANA ═══
+  // Profil bazlı hesaplama
+  let majorScore = 0;
+  if(W.lambda) majorScore += lambda * W.lambda * 2;
+  if(W.phi) majorScore += (phi / 3) * W.phi;
+  if(W.moon) majorScore += moonData.moonIntensity * W.moon * 0.5;
+  if(W.time) majorScore += timeData.hourWave * W.time * 0.3;
+  
+  // Sequence memory bias
+  if(seqData.bias && seqData.bias.type === 'forceMinor'){
+    majorScore -= 0.5; // Major streak varsa minor'a zorla
+  }
+  
+  // Tempo etkisi: çok hızlı = major şansı artar (impulsif)
+  if(W.tempo && tempoData.tempoScore > 0.7){
+    majorScore += 0.15;
+  }
+  
+  // Final karar
+  const majorThreshold = P.λ + 0.1 + (Math.random() - 0.5) * 0.2;
+  let isMajor = majorScore > majorThreshold;
+  
+  // Minimum minor oranı: %40
+  if(isMajor && Math.random() < 0.4) isMajor = false;
+  
+  // ═══ TERS KART ═══
+  let reversedScore = 0;
+  reversedScore += (feF > P.F) ? 0.4 : 0;
+  reversedScore += (dw && Math.random() < P.Cat) ? 0.3 : 0;
+  reversedScore += (r < 0.3) ? 0.2 : 0;
+  
+  // Ay fazı etkisi: dolunay = daha az ters, yeni ay = daha çok ters
+  reversedScore += (1 - moonData.moonIntensity) * 0.15;
+  
+  // Gece çekimi = bilinçdışı = daha çok ters
+  if(timeData.dayPhase === 'gece') reversedScore += 0.1;
+  
+  // Gerilim yüksekse ters şansı artar
+  if(resData.tension > resData.harmony) reversedScore += 0.1;
+  
+  const reversed = reversedScore > 0.45 + Math.random() * 0.2;
+  
+  // ═══ KART NUMARASI ═══
+  const nPhi = Math.min(1, Math.max(0, phi / 3));
+  let nIdx = 0;
+  
+  // Profil bazlı ağırlıklı hesaplama
+  if(W.phi) nIdx += nPhi * W.phi;
+  if(W.lorenz) nIdx += lzN * W.lorenz * 0.5;
+  if(W.kuramoto) nIdx += r * W.kuramoto;
+  if(W.sandpile) nIdx += (avgSp / 50) * W.sandpile;
+  if(W.time) nIdx += timeData.tsEntropy * W.time * 0.3;
+  if(W.moon) nIdx += moonData.phase * W.moon * 0.2;
+  
+  // Heat map etkisi: soğuk kartlara hafif bias
+  const coldCards = getColdCards();
+  const coldBias = coldCards.length > 30 ? 0.1 : 0; // Çok soğuk kart varsa bias
+  nIdx += coldBias * Math.random();
+  
+  nIdx = Math.min(1, Math.max(0, nIdx));
+  
+  // ═══ SUIT SEÇİMİ ═══
+  let suitIdx;
+  const magNorm = (mag + 1) / 2;
+  
+  // Tempo bazlı element bias
+  let elementBias = 0;
+  if(tempoData.element === 'ates') elementBias = -0.1;      // Değnekler'e (0)
+  else if(tempoData.element === 'su') elementBias = 0.15;   // Kupalar'a (1)
+  else if(tempoData.element === 'hava') elementBias = 0.35; // Kılıçlar'a (2)
+  else if(tempoData.element === 'toprak') elementBias = 0.6; // Pentaküller'e (3)
+  
+  // Resonans etkisi: eksik elemente bias
+  let resonanceBias = 0;
+  const minElement = Object.entries(resData.elements)
+    .filter(([k,v]) => k !== 'major')
+    .sort((a,b) => a[1] - b[1])[0];
+  if(minElement && minElement[1] === 0){
+    if(minElement[0] === 'ates') resonanceBias = -0.15;
+    else if(minElement[0] === 'su') resonanceBias = 0.1;
+    else if(minElement[0] === 'hava') resonanceBias = 0.35;
+    else if(minElement[0] === 'toprak') resonanceBias = 0.6;
+  }
+  
+  // Sequence memory: aynı suit'ten kaçın
+  let seqBias = 0;
+  if(seqData.bias && seqData.bias.type === 'avoidSuit'){
+    const avoidSuit = seqData.bias.suit;
+    // Kaçınılacak suit'e göre ters yöne bias
+    if(avoidSuit === 'Değnekler') seqBias = 0.25;
+    else if(avoidSuit === 'Kupalar') seqBias = -0.1;
+    else if(avoidSuit === 'Kılıçlar') seqBias = 0.15;
+    else if(avoidSuit === 'Pentaküller') seqBias = -0.15;
+  }
+  
+  const suitVal = Math.min(0.99, Math.max(0, 
+    magNorm * 0.5 + 
+    elementBias * (W.tempo || 0.1) + 
+    resonanceBias * (W.resonance || 0.1) +
+    seqBias * (W.sequence || 0.1) +
+    Math.random() * 0.3
   ));
-
-  const tid=isMajor?Math.floor(nIdx*22):22+si*14+Math.floor(nIdx*14);
-  const dc=findCard(tid,isMajor);
-  if(!dc)return null;
+  suitIdx = Math.floor(suitVal * 4);
+  
+  // ═══ KART ID HESABI ═══
+  let tid;
+  if(isMajor){
+    tid = Math.floor(nIdx * 22);
+  } else {
+    const pipIdx = Math.floor(nIdx * 14);
+    tid = 22 + suitIdx * 14 + pipIdx;
+  }
+  
+  const dc = findCard(tid, isMajor);
+  if(!dc) return null;
   usedIds.add(dc.id);
-  return {name:dc.n,icon:dc.s,arcana:dc.a,reversed,P};
+  
+  // Isı haritasına kaydet
+  recordCardDraw(dc.n);
+  
+  // Debug bilgisi (konsola)
+  console.log(`[${P.name}] Profile: ${profile.primary}/${profile.secondary} | Major: ${isMajor} | Suit: ${suitIdx} | Card: ${dc.n} ${reversed ? '(ters)' : ''}`);
+  console.log(`  └─ Moon: ${moonData.phaseEmoji} ${moonData.phaseName} | Tempo: ${tempoData.tempo} | Seq: ${seqData.majorStreak} major streak`);
+  
+  return {name:dc.n, icon:dc.s, arcana:dc.a, reversed, P};
 }
 
 function drawCard(){
@@ -1854,6 +2142,11 @@ function drawCard(){
   if(!card)return;
   SPREAD.push(card);
   renderSpread();updateNext();
+  
+  // UI güncellemeleri
+  if(typeof updateTempoDisplay === 'function') updateTempoDisplay();
+  if(typeof updateCosmicStatus === 'function') updateCosmicStatus();
+  
   if(SPREAD.length===S.positions.length)setTimeout(showResult,600);
 }
 
@@ -1894,8 +2187,10 @@ const WORKER_URL='https://tarot-proxy.cevikgun.workers.dev';
 
 function buildPrompt(){
   const S=SPREADS[activeSpreadId];
+  const isManual = SPREAD.some(c => c.manual);
+  const modeNote = isManual ? ' [Manuel giriş — kullanıcı kartlarını kendisi çekti]' : ' [Motor çekimi — matematiksel sistem kartları seçti]';
   const list=SPREAD.map((c,i)=>`${S.positions[i].num} · ${S.positions[i].name}: ${c.name}${c.reversed?' (ters)':''}`).join('\n');
-  return `Bu matematik-tarot açılımını yorumla (${S.tone}):\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
+  return `Bu tarot açılımını yorumla (${S.tone})${modeNote}:\n\n${list}\n\nHer pozisyon için 2-3 cümle.${S.id==='iliski'||S.id==='karar'?' Senaryo kartları için ayrı yol analizi.':''} Sonda genel sentez. Minimum 500 kelime. Türkçe, karmik, witch tonu, sıcak ve çıkış yolu veren, ruhun sonsuzluğu perspektifi.`;
 }
 
 async function getInterpretation(){
@@ -1909,6 +2204,11 @@ async function getInterpretation(){
   cont.innerHTML='<div class="interp-loading"><span class="interp-dot">✦</span><span class="interp-dot">✦</span><span class="interp-dot">✦</span></div>';
 
   const S=SPREADS[activeSpreadId];
+  const isManual = SPREAD.some(c => c.manual);
+  const modeNote = isManual 
+    ? '\n[Bu açılımda kullanıcı kartlarını kendisi çekti — fiziksel deste veya kendi sezgisiyle. Motor rastgeleliği kullanılmadı.]' 
+    : '\n[Bu açılımda kartlar matematiksel motor tarafından seçildi — 8 kaotik fonksiyonun kesişimi.]';
+  
   const cardContext=SPREAD.map((c,i)=>{
     const P=S.positions[i];
     const k=CARD_DB[c.name];
@@ -1917,12 +2217,14 @@ async function getInterpretation(){
       const meaning=c.reversed?k.reversed:k.upright;
       info+=`\n  Anlam: ${meaning}`;
       info+=`\n  Karmik katman: ${k.karmic}`;
+      if(k.planet) info+=`\n  Gezegen/Element: ${k.planet}`;
+      if(k.numReduce) info+=`\n  Numeroloji: ${k.numReduce}`;
     }
     return info;
   }).join('\n\n');
 
   const extra=S.id==='iliski'||S.id==='karar'?'Senaryo kartları için ayrı karmik yol analizi. ':'';
-  const userMsg=`Açılım: ${S.name} (${S.tone})\n\n${cardContext}\n\nYukarıdaki kart bilgilerini içselleştirerek derin, karmik bir yorum yaz. Her pozisyon 2-3 cümle. ${extra}Sonda genel sentez. Minimum 500 kelime.`;
+  const userMsg=`Açılım: ${S.name} (${S.tone})${modeNote}\n\n${cardContext}\n\nYukarıdaki kart bilgilerini içselleştirerek derin, karmik bir yorum yaz. Her pozisyon 2-3 cümle. ${extra}Sonda genel sentez. Minimum 500 kelime.`;
 
   try{
     const res=await fetch(WORKER_URL,{
@@ -1957,6 +2259,25 @@ function clearSpread(){
   SPREAD=[];usedIds.clear();
   renderSpread();updateNext();
   document.getElementById('resultPanel').style.display='none';
+  
+  // Manuel mod için UI sıfırla
+  if(currentMode === 'manual'){
+    updateManualUI();
+    // Dropdown'daki disable'ları temizle
+    const select = document.getElementById('cardSelect');
+    if(select){
+      Array.from(select.options).forEach(opt => {
+        opt.disabled = false;
+        opt.textContent = opt.textContent.replace(' ✓', '');
+      });
+      select.value = '';
+    }
+    document.getElementById('reverseCheck').checked = false;
+  }
+  
+  // Tempo sıfırla
+  lastDrawTime = 0;
+  drawTempos = [];
 }
 
 function togglePause(){
@@ -2028,6 +2349,7 @@ function loop(){
 
 
 // ── SYSTEM PROMPT ─────────────────────────────────────────
+const SYSTEM_PROMPT = 'Sen derin bir tarot bilgesisin. Rachel Pollack\'ın "Seventy-Eight Degrees of Wisdom", Alejandro Jodorowsky\'nin "The Way of Tarot", Skye Alexander\'ın "The Modern Witchcraft Book of Tarot" ve Mary K. Greer\'in "Tarot for Your Self" eserlerinden beslenen, karmik ve ruhsal bir perspektife sahipsin.\n\nYORUM STİLİ:\n- Ton: Sıcak, mistik, witch gibi gizemli ama asla korkutucu değil. Ruhun sonsuzluğunu bilen biri gibi konuş.\n- Karmik katman: Her kartı "bu ruhun hangi dersi öğrenmek için geldiği" sorusundan yorumla.\n- Ters kartlar: Enerji bloke veya içe dönmüş — "kötü" değil, "henüz açılmamış" olarak gör.\n- Tekrar eden kartlar: Aynı kart birden fazla açılımda çıkıyorsa bunu özellikle belirt.\n- Çıkış yolu: Her zorlukta bir kapı göster. Ruh çıkmaza girmez, yavaşlar.\n- Minimum 500 kelime. Her pozisyon 2-3 cümle, senaryo kartları ayrı analiz, sonunda sentez.\n\nKART BİLGİSİ: Sana her çekilen kartın Pollack perspektifli karmik özeti verilecek. Bunu kullan ama birebir tekrarlama — içselleştir, sentezle.';
 
 // ── GATE ──────────────────────────────────────────────────
 
@@ -2482,22 +2804,22 @@ const CARD_DB = {
 };
 
 // ── SYSTEM PROMPT ─────────────────────────────────────────
-  const SYSTEM_PROMPT = '';
 
-// GATE_PASS removed — auth via Worker
 
 async function checkGate(){
-  const val=document.getElementById('gateInput').value.trim();
-  const btn=document.querySelector('#gate button');
+  const val = document.getElementById('gateInput').value.trim();
+  const btn = document.querySelector('#gate button');
   if(!val){
     const err=document.getElementById('gateErr');
     err.textContent='Kod gir';err.style.opacity='1';
-    setTimeout(()=>err.style.opacity='0',2000);return;
+    setTimeout(()=>err.style.opacity='0',2000);
+    return;
   }
   btn.textContent='...';btn.disabled=true;
   try{
-    const res=await fetch(WORKER_URL,{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    const res = await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({auth:val,messages:[{role:'user',content:'ping'}],system:'ping'})
     });
     if(res.status===200){
@@ -2520,17 +2842,114 @@ async function checkGate(){
   btn.textContent='Gir ↯';btn.disabled=false;
 }
 
-// Auto-pass if already authenticated
-const _stored=localStorage.getItem('tarot_auth');
-if(_stored&&_stored!=='1'){
-  document.getElementById('gate').style.display='none';
-} else if(_stored==='1'){
-  localStorage.removeItem('tarot_auth');
-}
+// Auto-pass - şifre kontrolü geçici olarak devre dışı
+// const _stored=localStorage.getItem('tarot_auth');
+// if(_stored && _stored!=='1'){
+//   document.getElementById('gate').style.display='none';
+// } else if(_stored==='1'){
+//   localStorage.removeItem('tarot_auth');
+// }
+
+// Şifre ekranını direkt gizle
+const gateEl = document.getElementById('gate');
+if(gateEl) gateEl.style.display='none';
 
 rgInit();for(let i=0;i<20;i++)rgStep();
 kInit();spInit();
 setTimeout(loop,150);
+
+// ── COSMIC STATUS GÜNCELLEMELER ────────────────────────────
+function updateCosmicStatus(){
+  // Ay fazı
+  const moon = getMoonPhase();
+  document.getElementById('moonEmoji').textContent = moon.phaseEmoji;
+  const phaseNames = {
+    yeniAy: 'Yeni Ay', hilalBuyuyen: 'Hilal (↑)', ilkDordun: 'İlk Dördün',
+    giberBuyuyen: 'Giber (↑)', dolunay: 'Dolunay', giberAzalan: 'Giber (↓)',
+    sonDordun: 'Son Dördün', hilalAzalan: 'Hilal (↓)'
+  };
+  document.getElementById('moonPhaseName').textContent = phaseNames[moon.phaseName] || moon.phaseName;
+  
+  // Zaman
+  const time = getTimeEntropy();
+  const timeIcons = { gece: '🌙', sabah: '🌅', ogle: '☀️', aksam: '🌆' };
+  const timeNames = { gece: 'Gece', sabah: 'Sabah', ogle: 'Öğle', aksam: 'Akşam' };
+  document.getElementById('timeIcon').textContent = timeIcons[time.dayPhase] || '☀';
+  document.getElementById('timePhase').textContent = timeNames[time.dayPhase] || '—';
+  
+  // Isı haritası sayacı
+  const heat = loadCardHeat();
+  document.getElementById('heatCount').textContent = (heat._total || 0) + ' çekim';
+}
+
+// Her dakika güncelle
+updateCosmicStatus();
+setInterval(updateCosmicStatus, 60000);
+
+// Tempo güncelleme (drawCard sonrası)
+function updateTempoDisplay(){
+  const tempo = getDrawTempo();
+  const tempoNames = {
+    cokHizli: '⚡ Çok Hızlı', hizli: '💨 Hızlı', normal: '⚖️ Normal',
+    yavas: '🌊 Yavaş', cokYavas: '🌿 Çok Yavaş'
+  };
+  document.getElementById('drawTempo').textContent = tempoNames[tempo.tempo] || 'Hazır';
+}
+
+// ── HEAT MAP MODAL ────────────────────────────────────────
+function toggleHeatMap(){
+  const modal = document.getElementById('heatModal');
+  if(modal.style.display === 'none'){
+    modal.style.display = 'flex';
+    renderHeatMap();
+  } else {
+    modal.style.display = 'none';
+  }
+}
+
+function renderHeatMap(){
+  // Hot cards
+  const hotCards = getHotCards();
+  const hotEl = document.getElementById('hotCards');
+  if(hotCards.length === 0){
+    hotEl.innerHTML = '<div style="color:var(--fog);font-size:12px;">Henüz veri yok</div>';
+  } else {
+    hotEl.innerHTML = hotCards.map(c => `
+      <div class="heat-card">
+        <span class="heat-card-name">${c.name}</span>
+        <span class="heat-card-count">${c.count}×</span>
+      </div>
+    `).join('');
+  }
+  
+  // Cold cards count
+  const coldCards = getColdCards();
+  document.getElementById('coldCardsCount').textContent = 
+    `78 karttan ${coldCards.length} tanesini hiç çekmedin veya çok az çektin.`;
+  
+  // Total stats
+  const heat = loadCardHeat();
+  const total = heat._total || 0;
+  const uniqueCards = Object.keys(heat).filter(k => !k.startsWith('_')).length;
+  document.getElementById('totalStats').innerHTML = `
+    Toplam çekim: <strong>${total}</strong><br>
+    Farklı kart: <strong>${uniqueCards} / 78</strong><br>
+    Kapsama: <strong>${Math.round(uniqueCards/78*100)}%</strong>
+  `;
+}
+
+function resetHeatMap(){
+  if(confirm('Tüm çekim geçmişin silinecek. Emin misin?')){
+    localStorage.removeItem(HEAT_KEY);
+    updateCosmicStatus();
+    renderHeatMap();
+  }
+}
+
+// Modal dışına tıklayınca kapat
+document.getElementById('heatModal')?.addEventListener('click', function(e){
+  if(e.target === this) toggleHeatMap();
+});
 </script>
 </body>
 </html>
